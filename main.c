@@ -148,7 +148,7 @@ expect (exp, ex, x)\n\
             # Other errors\n\
         fi\n\
 \n\
-send\n\
+send (s)\n\
 \n\
   USAGE:\n\
     send [OPTION] [-exact] STRING\n\
