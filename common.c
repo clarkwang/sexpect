@@ -357,9 +357,11 @@ strunesc(const char * in, char ** out_, int * len_)
                         /* \ooo */
                         int n = o_OOO(in[1], in[2], in[3]);
                         if (n > 0xff) {
-                            free(out);
-                            return NULL;
+                            /* \oo */
+                            out[len++] = o_OO(in[1], in[2]);
+                            in += 3;
                         } else {
+                            /* \ooo */
                             out[len++] = o_OOO(in[1], in[2], in[3]);
                             in += 4;
                         }
