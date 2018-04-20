@@ -1,3 +1,19 @@
+# How to build
+
+## The *Make* Way
+
+    $ make
+
+## The [*CMake*](https://cmake.org/) Way
+
+    $ mkdir build; cd build; cmake ..; make
+    
+# Examples
+
+See the [*examples*](https://github.com/clarkwang/sexpect/tree/master/examples) dir.
+    
+# Brief Manual
+
     USAGE:
       sexpect [OPTION] [SUB-COMMAND]
     
