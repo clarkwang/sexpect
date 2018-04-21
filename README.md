@@ -24,6 +24,15 @@ running in background. You can *attach* to and *detach* from it as needed.
 
     $ mkdir build; cd build; cmake ..; make
     
+## Supported platforms                                                                
+                                                                                      
+Tested on:                                                                            
+                                                                                      
+* Debian Linux 9 (Stretch)                                                            
+* macOS 10.13 (High Sierra)                                                           
+* FreeBSD 11.1                                                                        
+* Cygwin on Windows 10
+    
 # Manual
 
 See [doc/manual.md](doc/manual.md).
