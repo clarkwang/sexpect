@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# In bc, calculate 1+2+3+... until the sum > 100.
+#
 
 if ! which sexpect >& /dev/null; then
     echo "sexpect not found in your \$PATH"
@@ -40,3 +43,41 @@ for ((i = 1; ; ++i)); do
         exit
     fi
 done
+
+#
+# EXAMPLE OUTPUT:
+#
+#   $ bash bc.sexp.sh
+#   bc 1.06.95
+#   Copyright 1991-1994, 1997, 1998, 2000, 2004, 2006 Free Software Foundation, Inc.
+#   This is free software with ABSOLUTELY NO WARRANTY.
+#   For details type `warranty'.
+#   0+1
+#   1
+#   1+2
+#   3
+#   3+3
+#   6
+#   6+4
+#   10
+#   10+5
+#   15
+#   15+6
+#   21
+#   21+7
+#   28
+#   28+8
+#   36
+#   36+9
+#   45
+#   45+10
+#   55
+#   55+11
+#   66
+#   66+12
+#   78
+#   78+13
+#   91
+#   91+14
+#   105
+#
