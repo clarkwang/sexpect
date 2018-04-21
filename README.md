@@ -4,9 +4,7 @@ According to [wikipedia](https://en.wikipedia.org/wiki/Expect):
 
 > [Expect][expect], an extension to the Tcl scripting language written by
 [Don Libes][don], is a program to automate
-interactions with programs that expose a text terminal interface. `Expect` was
-originally written in 1990 for Unix systems, but since became available for
-Microsoft Windows and other systems.
+interactions with programs that expose a text terminal interface.
 
 A very interesting paper (MUST READ!) written by Don Libes: [Writing a Tcl Extension in Only Seven Years][7y]
 
@@ -21,7 +19,7 @@ A very interesting paper (MUST READ!) written by Don Libes: [Writing a Tcl Exten
 Unlike [`Expect`][expect] (Tcl), [`Expect.pm`][expect.pm] (Perl),
 [`Pexpect`][pexpect] (Python) or other similar
 `Expect` implementations, `sexpect` is not bound to any specific programming
-language so it can be used with any languages which support running external
+languages so it can be used with any languages which support running external
 commands. Users who write shell (like `Bash`) scripts would love this because
 they don't have to learn other languages just to use `Expect` or the *Expect*
 module.
