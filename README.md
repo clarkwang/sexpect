@@ -1,13 +1,16 @@
-# What's *sexpect*
+# What's `sexpect`
 
-`sexpect` is another implementation of `Expect` (`s` is for either *simple* or
+`sexpect` is another implementation of [`Expect`][expect] (`s` is for either *simple* or
 *super*).
 
-Unlike `Expect` (Tcl), `Expect.pm` (Perl), `Pexpect` (Python) or other similar
+Unlike [`Expect`][expect] (Tcl), [`Expect.pm`][expect.pm] (Perl),
+[`Pexpect`][pexpect] (Python) or other similar
 `Expect` implementations, `sexpect` is not bound to any specific programming
 language so it can be used with any languages which support running external
-commands.
-    
+commands. Users who write shell (like `Bash`) scripts would love this because
+they don't have to learn other languages just to use `Expect` or the *Expect*
+module.
+
 Another interesting `sexpect` feature is that the spawned child process is
 running in background. You can *attach* to and *detach* from it as needed.
 
@@ -27,4 +30,8 @@ See [doc/manual.md](doc/manual.md).
     
 # Examples
 
-See the [*examples/*](https://github.com/clarkwang/sexpect/tree/master/examples) dir.
+See the [examples/](https://github.com/clarkwang/sexpect/tree/master/examples) dir.
+
+[expect]:    https://core.tcl.tk/expect/
+[expect.pm]: http://search.cpan.org/perldoc?Expect
+[pexpect]:   https://pexpect.readthedocs.io/
