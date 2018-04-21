@@ -1,16 +1,3 @@
-# What's `Expect`
-
-According to [wikipedia](https://en.wikipedia.org/wiki/Expect):
-
-> [Expect][expect], an extension to the Tcl scripting language written by
-[Don Libes][don], is a program to automate
-interactions with programs that expose a text terminal interface.
-
-A very interesting paper (MUST READ!) written by Don Libes: [Writing a Tcl Extension in Only Seven Years][7y]
-
-[don]: https://en.wikipedia.org/wiki/Don_Libes
-[7y]:  https://ws680.nist.gov/publication/get_pdf.cfm?pub_id=821282
-
 # What's `sexpect`
 
 `sexpect` is another implementation of [`Expect`][expect] (`s` is for either *simple* or
