@@ -29,8 +29,8 @@ fi
 sum=0
 max=100
 for ((i = 1; ; ++i)); do
-    sexpect s -cr "$sum+$i"
-    if ! sexpect ex -re '[[:space:]]([0-9]+)[[:space:]]'; then
+    sexpect s -cr "$sum + $i"
+    if ! sexpect ex -cstr -re '[\r\n]([0-9]+)[\r\n]'; then
         sexpect k -kill
 
         echo "oops! something wrong"
@@ -52,32 +52,32 @@ done
 #   Copyright 1991-1994, 1997, 1998, 2000, 2004, 2006 Free Software Foundation, Inc.
 #   This is free software with ABSOLUTELY NO WARRANTY.
 #   For details type `warranty'.
-#   0+1
+#   0 + 1
 #   1
-#   1+2
+#   1 + 2
 #   3
-#   3+3
+#   3 + 3
 #   6
-#   6+4
+#   6 + 4
 #   10
-#   10+5
+#   10 + 5
 #   15
-#   15+6
+#   15 + 6
 #   21
-#   21+7
+#   21 + 7
 #   28
-#   28+8
+#   28 + 8
 #   36
-#   36+9
+#   36 + 9
 #   45
-#   45+10
+#   45 + 10
 #   55
-#   55+11
+#   55 + 11
 #   66
-#   66+12
+#   66 + 12
 #   78
-#   78+13
+#   78 + 13
 #   91
-#   91+14
+#   91 + 14
 #   105
 #

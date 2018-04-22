@@ -181,6 +181,7 @@ struct st_pass {
     int    timeout;     /* negative value means infinite */
     int    expflags;
     char * pattern;
+    bool   cstring;
     bool   no_capture;
 };
 

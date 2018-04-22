@@ -12,7 +12,7 @@
 #include "pty.h"
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.0.2";
+char * const VERSION = "2.0.3";
 
 static struct {
     char * progname;
@@ -110,6 +110,10 @@ expect (exp, ex, x)\n\
         expect -timeout 0 -re '.*'\n\
 \n\
   OPTIONS\n\
+    -cstring | -cstr | -c\n\
+        This will cause the specified STRING or PATTERN to be recognized as\n\
+        a C style string. See 'send' for more information.\n\
+\n\
     -eof\n\
         Wait until EOF from the child process.\n\
 \n\
@@ -518,9 +522,6 @@ getargs(int argc, char **argv)
         } else if (streq(g.cmdopts.cmd, "expect") ) {
             if (str1of(arg, "-exact", "-ex", "-re", NULL) ) {
                 next = nextarg(argv, "-exact", & i);
-                if (next[0] == '\0') {
-                    fatal(ERROR_USAGE, "pattern cannot be empty");
-                }
                 g.cmdopts.pass.pattern = next;
                 if (str1of(arg, "-exact", "-ex", NULL) ) {
                     g.cmdopts.pass.expflags |= PASS_EXPECT_EXACT;
@@ -529,6 +530,8 @@ getargs(int argc, char **argv)
                 }
             } else if (str1of(arg, "-nocase", "-icase", "-ic", "-i", NULL) ) {
                 g.cmdopts.pass.expflags |= PASS_EXPECT_ICASE;
+            } else if (str1of(arg, "-cstring", "-cstr", "-c", NULL) ) {
+                g.cmdopts.pass.cstring = true;
             } else if (streq(arg, "-eof") ) {
                 g.cmdopts.pass.expflags |= PASS_EXPECT_EOF;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
@@ -626,29 +629,23 @@ getargs(int argc, char **argv)
                 next = nextarg(argv, "-cstring", & i);
                 strunesc(next, & g.cmdopts.send.data, & g.cmdopts.send.len);
                 if (g.cmdopts.send.data == NULL) {
-                    fatal(ERROR_USAGE, "invalid -cstring: %s", next);
+                    fatal(ERROR_USAGE, "invalid backslash escapes: %s", next);
                 }
                 if (g.cmdopts.send.len >= PASS_MAX_SEND) {
-                    fatal(ERROR_USAGE, "send: string length must be <%d", PASS_MAX_SEND);
+                    fatal(ERROR_USAGE, "string length must be < %d", PASS_MAX_SEND);
                 }
             } else if (str1of(arg, "-cr", "-enter", NULL) ) {
                 g.cmdopts.send.enter = true;
-            } else if (str1of(arg, "-exact", "-ex", NULL) ) {
-                next = nextarg(argv, "-exact", & i);
-                if (strlen(next) > PASS_MAX_SEND) {
-                    fatal(ERROR_USAGE, "send: string length must be <%d", PASS_MAX_SEND);
-                }
-                g.cmdopts.send.data = strdup(next);
-                g.cmdopts.send.len = strlen(next);
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown send option: %s", arg);
             } else if (g.cmdopts.send.data == NULL) {
                 if (strlen(arg) > PASS_MAX_SEND) {
-                    fatal(ERROR_USAGE, "send: string length must be <%d", PASS_MAX_SEND);
+                    fatal(ERROR_USAGE, "send: string length must be < %d", PASS_MAX_SEND);
                 }
-                g.cmdopts.send.data = strdup(arg);
+                g.cmdopts.send.data = arg;
                 g.cmdopts.send.len = strlen(arg);
             } else {
+                usage_err = true;
                 break;
             }
 
@@ -724,16 +721,52 @@ getargs(int argc, char **argv)
         fatal(ERROR_USAGE, "unexpected argument: %s", arg);
     }
 
-    if (g.cmdopts.cmd == NULL || streq(g.cmdopts.cmd, "help") ) {
-        usage(0);
-    } else if (streq(g.cmdopts.cmd, "expect") ) {
+    /* no arguments specified */
+    if (g.cmdopts.cmd == NULL) {
+        fatal(ERROR_USAGE, "run %s -h for help", SEXPECT);
+    }
+
+    /* expect */
+    if (streq(g.cmdopts.cmd, "expect") ) {
         struct st_pass *st = & g.cmdopts.pass;
         int flags = st->expflags & (PASS_EXPECT_EOF | PASS_EXPECT_EXACT | PASS_EXPECT_ERE);
         if (count1bits(flags) > 1) {
             fatal(ERROR_USAGE, "-eof, -exact and -re are exclusive");
         }
+
+        if (st->pattern != NULL) {
+            if (st->cstring) {
+                char * pattern = NULL;
+                int len = 0;
+                strunesc(st->pattern, & pattern, & len);
+                if (pattern == NULL) {
+                    fatal(ERROR_USAGE, "invalid backslash escapes: %s", st->pattern);
+                } else if (strlen(pattern) != len) {
+                    fatal(ERROR_USAGE, "pattern cannot include NULL bytes");
+                } else {
+                    st->pattern = pattern;
+                }
+            }
+            if (strlen(st->pattern) ==  0) {
+                fatal(ERROR_USAGE, "pattern cannot be empty");
+            }
+        }
+
+        /* help */
+    } else if (streq(g.cmdopts.cmd, "help") ) {
+        usage(0);
+
+        /* send */
+    } else if (streq(g.cmdopts.cmd, "send") ) {
+        if (g.cmdopts.send.len == 0) {
+            g.cmdopts.send.data = "";
+        }
+
+        /* spawn */
     } else if (streq(g.cmdopts.cmd, "spawn") && g.cmdopts.spawn.argv == NULL) {
         fatal(ERROR_USAGE, "spawn requires more arguments");
+
+        /* version */
     } else if (streq(g.cmdopts.cmd, "version") ) {
         printf("%s %s\n", SEXPECT, VERSION);
         exit(0);

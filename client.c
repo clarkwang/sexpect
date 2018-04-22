@@ -358,7 +358,7 @@ cli_main(struct st_cmdopts * cmdopts)
             msg_out = ptag_new_raw(PTAG_SEND,
                 cmdopts->send.len + 1, cmdopts->send.data);
             msg_out->v_raw[cmdopts->send.len] = '\r';
-        } else {
+        } else if (cmdopts->send.len > 0) {
             msg_out = ptag_new_raw(PTAG_SEND,
                 cmdopts->send.len, cmdopts->send.data);
         }

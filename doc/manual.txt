@@ -82,6 +82,10 @@ expect (exp, ex, x)
         expect -timeout 0 -re '.*'
 
   OPTIONS
+    -cstring | -cstr | -c
+        This will cause the specified STRING or PATTERN to be recognized as
+        a C style string. See 'send' for more information.
+
     -eof
         Wait until EOF from the child process.
 
