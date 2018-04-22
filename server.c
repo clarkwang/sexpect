@@ -926,6 +926,10 @@ serv_main(struct st_cmdopts * cmdopts)
         /* child */
         close(g.fd_listen);
 
+        if (cmdopts->spawn.nohup) {
+            debug("make the child ignore SIGHUP");
+            sig_handle(SIGHUP, SIG_IGN);
+        }
         if (execvp(g.cmdopts->spawn.argv[0], g.cmdopts->spawn.argv) < 0) {
             fatal_sys("exec(%s)", g.cmdopts->spawn.argv[0]);
         }

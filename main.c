@@ -12,7 +12,7 @@
 #include "pty.h"
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.0.1";
+char * const VERSION = "2.0.2";
 
 static struct {
     char * progname;
@@ -88,8 +88,6 @@ spawn (sp)\n\
         to append to it.\n\
 \n\
     -nohup\n\
-        (NOT_IMPLEMENTED_YET)\n\
-\n\
         Let the spawned child process ignore SIGHUP.\n\
 \n\
     -timeout N | -t N\n\
@@ -99,10 +97,10 @@ spawn (sp)\n\
 expect (exp, ex, x)\n\
 \n\
   USAGE\n\
-    expect [OPTION] [-exact] STRING \n\
+    expect [OPTION] [-exact] STRING\n\
     expect [OPTION] -glob PATTERN\n\
-    expect [OPTION] -re PATTERN \n\
-    expect [OPTION] -eof \n\
+    expect [OPTION] -re PATTERN\n\
+    expect [OPTION] -eof\n\
     expect\n\
 \n\
   DESCRIPTION\n\

@@ -35,7 +35,7 @@ Tested on:
     
 # Manual
 
-See [doc/manual.md](doc/manual.md).
+See [doc/manual.txt](doc/manual.txt) .
     
 # Examples
 
