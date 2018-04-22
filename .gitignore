@@ -2,4 +2,6 @@
 *.o
 
 a.out
-b
+b/
+sexpect
+tags

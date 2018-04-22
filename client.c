@@ -358,7 +358,9 @@ cli_main(struct st_cmdopts * cmdopts)
             msg_out = ptag_new_raw(PTAG_SEND,
                 cmdopts->send.len + 1, cmdopts->send.data);
             msg_out->v_raw[cmdopts->send.len] = '\r';
-        } else if (cmdopts->send.len > 0) {
+        } else {
+            /* send even when the length is 0 or we'll block waiting for
+             * the ACK */
             msg_out = ptag_new_raw(PTAG_SEND,
                 cmdopts->send.len, cmdopts->send.data);
         }

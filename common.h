@@ -125,6 +125,7 @@ struct st_spawn {
 };
 
 struct st_send {
+    bool   cstring;
     char * data;
     int    len;
     bool   enter;

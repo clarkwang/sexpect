@@ -111,8 +111,8 @@ expect (exp, ex, x)\n\
 \n\
   OPTIONS\n\
     -cstring | -cstr | -c\n\
-        This will cause the specified STRING or PATTERN to be recognized as\n\
-        a C style string. See 'send' for more information.\n\
+        C style bashslash escapes would be recognized and replaced in STRING\n\
+        or PATTERN. See 'send' for more information.\n\
 \n\
     -eof\n\
         Wait until EOF from the child process.\n\
@@ -153,13 +153,12 @@ expect (exp, ex, x)\n\
 send (s)\n\
 \n\
   USAGE:\n\
-    send [OPTION] [-exact] STRING\n\
-    send -cstring STRING\n\
+    send [OPTION] STRING\n\
 \n\
   DESCRIPTION:\n\
 \n\
   OPTIONS:\n\
-    -cstring STRING | -cstr STRING | -c STRING\n\
+    -cstring | -cstr | -c\n\
         C style bashslash escapes would be recognized and replaced before\n\
         sending to the server.\n\
 \n\
@@ -176,8 +175,6 @@ send (s)\n\
 \n\
     -enter | -cr\n\
         Append ENTER (\\r) to the specified STRING before sending to the server.\n\
-\n\
-    -exact STRING | -ex STRING\n\
 \n\
     -fd FD\n\
         (NOT_IMPLEMENTED_YET)\n\
@@ -626,14 +623,7 @@ getargs(int argc, char **argv)
             /* send */
         } else if (streq(g.cmdopts.cmd, "send") ) {
             if (str1of(arg, "-cstring", "-cstr", "-c", NULL) ) {
-                next = nextarg(argv, "-cstring", & i);
-                strunesc(next, & g.cmdopts.send.data, & g.cmdopts.send.len);
-                if (g.cmdopts.send.data == NULL) {
-                    fatal(ERROR_USAGE, "invalid backslash escapes: %s", next);
-                }
-                if (g.cmdopts.send.len >= PASS_MAX_SEND) {
-                    fatal(ERROR_USAGE, "string length must be < %d", PASS_MAX_SEND);
-                }
+                g.cmdopts.send.cstring = true;
             } else if (str1of(arg, "-cr", "-enter", NULL) ) {
                 g.cmdopts.send.enter = true;
             } else if (arg[0] == '-') {
@@ -758,8 +748,18 @@ getargs(int argc, char **argv)
 
         /* send */
     } else if (streq(g.cmdopts.cmd, "send") ) {
-        if (g.cmdopts.send.len == 0) {
-            g.cmdopts.send.data = "";
+        struct st_send * st = & g.cmdopts.send;
+        char * data = NULL;
+        if (st->data != NULL && st->cstring) {
+            strunesc(st->data, & data, & st->len);
+            if (data == NULL) {
+                fatal(ERROR_USAGE, "invalid backslash escapes: %s", st->data);
+            } else {
+                st->data = data;
+            }
+        }
+        if (st->len == 0) {
+            st->data = "";
         }
 
         /* spawn */

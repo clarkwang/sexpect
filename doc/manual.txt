@@ -83,8 +83,8 @@ expect (exp, ex, x)
 
   OPTIONS
     -cstring | -cstr | -c
-        This will cause the specified STRING or PATTERN to be recognized as
-        a C style string. See 'send' for more information.
+        C style bashslash escapes would be recognized and replaced in STRING
+        or PATTERN. See 'send' for more information.
 
     -eof
         Wait until EOF from the child process.
@@ -125,13 +125,12 @@ expect (exp, ex, x)
 send (s)
 
   USAGE:
-    send [OPTION] [-exact] STRING
-    send -cstring STRING
+    send [OPTION] STRING
 
   DESCRIPTION:
 
   OPTIONS:
-    -cstring STRING | -cstr STRING | -c STRING
+    -cstring | -cstr | -c
         C style bashslash escapes would be recognized and replaced before
         sending to the server.
 
@@ -148,8 +147,6 @@ send (s)
 
     -enter | -cr
         Append ENTER (\r) to the specified STRING before sending to the server.
-
-    -exact STRING | -ex STRING
 
     -fd FD
         (NOT_IMPLEMENTED_YET)
