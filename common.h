@@ -92,6 +92,7 @@ enum {
     PTAG_LOGFILE,
     PTAG_LOGFILE_APPEND,
     PTAG_NOHUP,
+    PTAG_LOOKBACK,
 
     /* THE END */
     PTAG_END__,
@@ -184,6 +185,7 @@ struct st_pass {
     char * pattern;
     bool   cstring;
     bool   no_capture;
+    int    lookback;
 };
 
 struct st_cmdopts {

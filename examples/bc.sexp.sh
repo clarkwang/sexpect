@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# In bc, calculate 1+2+3+... until the sum > 100.
+# Start bc, calculate 1+2+3+... until the sum > 100.
 #
 
 if ! which sexpect >& /dev/null; then
@@ -14,9 +14,11 @@ if [[ ! -f $tmpsock ]]; then
     exit 1
 else
     rm -f $tmpsock
-    export SEXPECT_SOCKFILE=$tmpsock
 fi
 
+#-- Here we go! -----------------------#
+
+export SEXPECT_SOCKFILE=$tmpsock
 sexpect sp -t 2 -nowait env -i bc
 
 if ! sexpect ex warranty; then

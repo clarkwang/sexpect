@@ -49,6 +49,7 @@ static struct {
             int    expflags;
             char * pattern;
             int    timeout;
+            int    lookback;
             struct timespec start_time;
         } pass;
     } conn;
@@ -286,14 +287,23 @@ serv_process_msg(void)
             t = ptag_find_child(msg_in, PTAG_EXP_FLAGS);
             g.conn.pass.expflags = t->v_int;
 
+            /* expect with a pattern */
             if ( (t = ptag_find_child(msg_in, PTAG_PATTERN) ) != NULL) {
                 g.conn.pass.pattern = strdup( (char *) t->v_text);
             }
 
+            /* expect -timeout */
             if ( (t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT) ) != NULL) {
                 g.conn.pass.timeout = t->v_int;
             } else {
                 g.conn.pass.timeout = g.cmdopts->spawn.def_timeout;
+            }
+
+            /* interact -lookback */
+            if ( (t = ptag_find_child(msg_in, PTAG_LOOKBACK) ) != NULL) {
+                if (t->v_int > 0) {
+                    g.conn.pass.lookback = t->v_int;
+                }
             }
 
             break;
@@ -639,6 +649,8 @@ serv_pass(void)
 {
     ptag_t * msg_out;
     int exitstatus;
+    int lookback, lines, nsend;
+    char * pc = NULL, * psend = NULL;
 
     /* expect/interact/wait */
     if (g.conn.sock < 0 || ! g.conn.passing) {
@@ -646,8 +658,38 @@ serv_pass(void)
     }
 
     /* output from child */
-    if (g.newcnt > 0) {
-        msg_out = ptag_new_text(PTAG_OUTPUT, g.newcnt, g.rawnew);
+#if 1
+    lookback = g.conn.pass.lookback;
+    if (lookback == 0) {
+        psend = g.rawnew;
+    } else {
+        g.conn.pass.lookback = 0;
+
+        lines = 0;
+        for (pc = g.rawnew + g.newcnt - 1; pc >= g.rawbuf; --pc) {
+            if (pc[0] == '\n') {
+                if (++lines >= lookback) {
+                    break;
+                }
+            }
+        }
+        if (lines > 0) {
+            if (pc < g.rawbuf) {
+                pc = strchr(g.rawbuf, '\n');
+            }
+            if (pc < g.rawnew) {
+                psend = pc + 1;
+            } else {
+                psend = g.rawnew;
+            }
+        } else {
+            psend = g.rawbuf;
+        }
+    }
+
+    nsend = g.rawnew + g.newcnt - psend;
+    if (nsend > 0) {
+        msg_out = ptag_new_raw(PTAG_OUTPUT, nsend, psend);
         if (serv_msg_send(&msg_out, true) < 0) {
             return;
         }
@@ -655,6 +697,17 @@ serv_pass(void)
         g.rawnew += g.newcnt;
         g.newcnt = 0;
     }
+#else
+    if (g.newcnt > 0) {
+        msg_out = ptag_new_raw(PTAG_OUTPUT, g.newcnt, g.rawnew);
+        if (serv_msg_send(&msg_out, true) < 0) {
+            return;
+        }
+
+        g.rawnew += g.newcnt;
+        g.newcnt = 0;
+    }
+#endif
 
     /* "expect" with a pattern */
     if ((g.conn.pass.expflags \

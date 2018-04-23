@@ -1,7 +1,9 @@
 USAGE:
+
   sexpect [OPTION] [SUB-COMMAND]
 
 DESCRIPTION:
+
   Yet Another Expect ('s' is for either simple or super)
 
   Unlike Expect (Tcl), Expect.pm (Perl), Pexpect (Python) or other similar
@@ -13,6 +15,7 @@ DESCRIPTION:
   running in background. You can attach to and detach from it as needed.
 
 GLOBAL OPTIONS:
+
   -debug | -d
         Debug mode. The server will run in foreground.
 
@@ -30,6 +33,7 @@ GLOBAL OPTIONS:
   -version | --version
 
 ENVIRONMENT VARIABLES:
+
   SEXPECT_SOCKFILE
         The same as global option '-sock' but has lower precedence.
 
@@ -37,6 +41,7 @@ SUB-COMMANDS:
 =============
 
 spawn (sp)
+----------
 
   USAGE:
     spawn [OPTION] COMMAND...
@@ -67,17 +72,18 @@ spawn (sp)
         The default value is 10 seconds. A negative value means no timeout.
 
 expect (exp, ex, x)
+-------------------
 
   USAGE
-    expect [OPTION] [-exact] STRING
+    expect [OPTION] [-exact] PATTERN
     expect [OPTION] -glob PATTERN
     expect [OPTION] -re PATTERN
     expect [OPTION] -eof
     expect
 
   DESCRIPTION
-    Only one of '-exact', '-glob', '-re' or '-eof' can be specified. If none of
-    them is specified then it defaults to
+    Only one of '-exact', '-glob', '-re' or '-eof' options can be specified.
+    If none of them is specified then it defaults to
 
         expect -timeout 0 -re '.*'
 
@@ -89,8 +95,8 @@ expect (exp, ex, x)
     -eof
         Wait until EOF from the child process.
 
-    -exact PATTERN | -ex STRING
-        Expect the exact STRING.
+    -exact PATTERN | -ex PATTERN
+        Handle PATTERN as an 'exact' string.
 
     -glob PATTERN | -gl PATTERN
         (NOT_IMPLEMENTED_YET)
@@ -123,9 +129,10 @@ expect (exp, ex, x)
         fi
 
 send (s)
+--------
 
   USAGE:
-    send [OPTION] STRING
+    send [OPTION] [--] STRING
 
   DESCRIPTION:
 
@@ -161,6 +168,7 @@ send (s)
 
 
 interact (i)
+------------
 
   USAGE:
     interact [OPTION]
@@ -178,12 +186,11 @@ interact (i)
 
   OPTIONS:
     -lookback N | -lb N
-        (NOT_IMPLEMENTED_YET)
-
         Show the most recent last N lines of output after 'interact' so you'd
         know where you were last time.
 
 wait (w)
+--------
 
   USAGE:
     wait
@@ -193,6 +200,7 @@ wait (w)
     same exit code as the child process.
 
 expect_out (expout, out)
+------------------------
 
   USAGE:
     expect_out [-index N]
@@ -219,6 +227,7 @@ expect_out (expout, out)
         N can be 0-9. The default is 0.
 
 chkerr (chk, ck)
+----------------
 
   USAGE:
     chkerr -errno NUM -is REASON
@@ -241,6 +250,7 @@ chkerr (chk, ck)
     1 will be exited if the specified error NUM is NOT caused by the REASON.
 
 close (c)
+---------
 
   USAGE:
     close
@@ -250,6 +260,7 @@ close (c)
     to receive SIGHUP and be killed.
 
 kill (k)
+--------
 
   USAGE:
     kill -NAME
@@ -272,6 +283,7 @@ kill (k)
         Specify the signal with number.
 
 set
+----
 
   USAGE:
     set [OPTION]
@@ -305,6 +317,7 @@ set
         See 'spawn'.
 
 get
+----
 
   USAGE:
     get [OPTION]

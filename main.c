@@ -12,7 +12,7 @@
 #include "pty.h"
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.0.3";
+char * const VERSION = "2.0.5";
 
 static struct {
     char * progname;
@@ -27,9 +27,11 @@ usage(int exitcode)
     fp = (exitcode == 0) ? stdout : stderr;
     fprintf(fp, "\
 USAGE:\n\
+\n\
   sexpect [OPTION] [SUB-COMMAND]\n\
 \n\
 DESCRIPTION:\n\
+\n\
   Yet Another Expect ('s' is for either simple or super)\n\
 \n\
   Unlike Expect (Tcl), Expect.pm (Perl), Pexpect (Python) or other similar\n\
@@ -41,6 +43,7 @@ DESCRIPTION:\n\
   running in background. You can attach to and detach from it as needed.\n\
 \n\
 GLOBAL OPTIONS:\n\
+\n\
   -debug | -d\n\
         Debug mode. The server will run in foreground.\n\
 \n\
@@ -58,6 +61,7 @@ GLOBAL OPTIONS:\n\
   -version | --version\n\
 \n\
 ENVIRONMENT VARIABLES:\n\
+\n\
   SEXPECT_SOCKFILE\n\
         The same as global option '-sock' but has lower precedence.\n\
 \n\
@@ -65,6 +69,7 @@ SUB-COMMANDS:\n\
 =============\n\
 \n\
 spawn (sp)\n\
+----------\n\
 \n\
   USAGE:\n\
     spawn [OPTION] COMMAND...\n\
@@ -95,17 +100,18 @@ spawn (sp)\n\
         The default value is 10 seconds. A negative value means no timeout.\n\
 \n\
 expect (exp, ex, x)\n\
+-------------------\n\
 \n\
   USAGE\n\
-    expect [OPTION] [-exact] STRING\n\
+    expect [OPTION] [-exact] PATTERN\n\
     expect [OPTION] -glob PATTERN\n\
     expect [OPTION] -re PATTERN\n\
     expect [OPTION] -eof\n\
     expect\n\
 \n\
   DESCRIPTION\n\
-    Only one of '-exact', '-glob', '-re' or '-eof' can be specified. If none of\n\
-    them is specified then it defaults to\n\
+    Only one of '-exact', '-glob', '-re' or '-eof' options can be specified.\n\
+    If none of them is specified then it defaults to\n\
 \n\
         expect -timeout 0 -re '.*'\n\
 \n\
@@ -117,8 +123,8 @@ expect (exp, ex, x)\n\
     -eof\n\
         Wait until EOF from the child process.\n\
 \n\
-    -exact PATTERN | -ex STRING\n\
-        Expect the exact STRING.\n\
+    -exact PATTERN | -ex PATTERN\n\
+        Handle PATTERN as an 'exact' string.\n\
 \n\
     -glob PATTERN | -gl PATTERN\n\
         (NOT_IMPLEMENTED_YET)\n\
@@ -151,9 +157,10 @@ expect (exp, ex, x)\n\
         fi\n\
 \n\
 send (s)\n\
+--------\n\
 \n\
   USAGE:\n\
-    send [OPTION] STRING\n\
+    send [OPTION] [--] STRING\n\
 \n\
   DESCRIPTION:\n\
 \n\
@@ -189,6 +196,7 @@ send (s)\n\
 \n\
 \n\
 interact (i)\n\
+------------\n\
 \n\
   USAGE:\n\
     interact [OPTION]\n\
@@ -206,12 +214,11 @@ interact (i)\n\
 \n\
   OPTIONS:\n\
     -lookback N | -lb N\n\
-        (NOT_IMPLEMENTED_YET)\n\
-\n\
         Show the most recent last N lines of output after 'interact' so you'd\n\
         know where you were last time.\n\
 \n\
 wait (w)\n\
+--------\n\
 \n\
   USAGE:\n\
     wait\n\
@@ -221,6 +228,7 @@ wait (w)\n\
     same exit code as the child process.\n\
 \n\
 expect_out (expout, out)\n\
+------------------------\n\
 \n\
   USAGE:\n\
     expect_out [-index N]\n\
@@ -247,6 +255,7 @@ expect_out (expout, out)\n\
         N can be 0-9. The default is 0.\n\
 \n\
 chkerr (chk, ck)\n\
+----------------\n\
 \n\
   USAGE:\n\
     chkerr -errno NUM -is REASON\n\
@@ -269,6 +278,7 @@ chkerr (chk, ck)\n\
     1 will be exited if the specified error NUM is NOT caused by the REASON.\n\
 \n\
 close (c)\n\
+---------\n\
 \n\
   USAGE:\n\
     close\n\
@@ -278,6 +288,7 @@ close (c)\n\
     to receive SIGHUP and be killed.\n\
 \n\
 kill (k)\n\
+--------\n\
 \n\
   USAGE:\n\
     kill -NAME\n\
@@ -300,6 +311,7 @@ kill (k)\n\
         Specify the signal with number.\n\
 \n\
 set\n\
+----\n\
 \n\
   USAGE:\n\
     set [OPTION]\n\
@@ -333,6 +345,7 @@ set\n\
         See 'spawn'.\n\
 \n\
 get\n\
+----\n\
 \n\
   USAGE:\n\
     get [OPTION]\n\
@@ -602,8 +615,13 @@ getargs(int argc, char **argv)
 
             /* interact */
         } else if (streq(g.cmdopts.cmd, "interact") ) {
-            usage_err = true;
-            break;
+            if (str1of(arg, "-lookback", "-lb", NULL) ) {
+                next = nextarg(argv, "-lookback", & i);
+                g.cmdopts.pass.lookback = atoi(next);
+            } else {
+                usage_err = true;
+                break;
+            }
 
             /* kill */
         } else if (streq(g.cmdopts.cmd, "kill") ) {
@@ -626,12 +644,20 @@ getargs(int argc, char **argv)
                 g.cmdopts.send.cstring = true;
             } else if (str1of(arg, "-cr", "-enter", NULL) ) {
                 g.cmdopts.send.enter = true;
+            } else if (streq(arg, "--" ) ) {
+                if (argv[i + 1] != NULL) {
+                    if (argv[i + 2] != NULL) {
+                        arg = argv[i + 2];
+                        usage_err = true;
+                        break;
+                    }
+                    g.cmdopts.send.data = argv[i + 1];
+                    g.cmdopts.send.len = strlen(argv[i + 1]);
+                }
+                break;
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown send option: %s", arg);
             } else if (g.cmdopts.send.data == NULL) {
-                if (strlen(arg) > PASS_MAX_SEND) {
-                    fatal(ERROR_USAGE, "send: string length must be < %d", PASS_MAX_SEND);
-                }
                 g.cmdopts.send.data = arg;
                 g.cmdopts.send.len = strlen(arg);
             } else {
@@ -750,6 +776,11 @@ getargs(int argc, char **argv)
     } else if (streq(g.cmdopts.cmd, "send") ) {
         struct st_send * st = & g.cmdopts.send;
         char * data = NULL;
+
+        if (st->data == NULL) {
+            st->data = "";
+        }
+
         if (st->data != NULL && st->cstring) {
             strunesc(st->data, & data, & st->len);
             if (data == NULL) {
@@ -758,8 +789,9 @@ getargs(int argc, char **argv)
                 st->data = data;
             }
         }
-        if (st->len == 0) {
-            st->data = "";
+
+        if (st->len > PASS_MAX_SEND) {
+            fatal(ERROR_USAGE, "send: string length must be < %d", PASS_MAX_SEND);
         }
 
         /* spawn */

@@ -358,7 +358,7 @@ cli_main(struct st_cmdopts * cmdopts)
             msg_out = ptag_new_raw(PTAG_SEND,
                 cmdopts->send.len + 1, cmdopts->send.data);
             msg_out->v_raw[cmdopts->send.len] = '\r';
-        } else {
+        } else if (cmdopts->send.len > 0) {
             /* send even when the length is 0 or we'll block waiting for
              * the ACK */
             msg_out = ptag_new_raw(PTAG_SEND,
@@ -390,6 +390,7 @@ cli_main(struct st_cmdopts * cmdopts)
         ptag_t * expflags;
         ptag_t * pattern;
         ptag_t * timeout;
+        ptag_t * lookback;
 
         /* "expect" without a pattern */
         if (cmdopts->pass.expflags == 0) {
@@ -417,9 +418,20 @@ cli_main(struct st_cmdopts * cmdopts)
             ptag_append_child(msg_out, pattern, NULL);
         }
 
+        if (cmdopts->pass.lookback > 0) {
+            lookback = ptag_new_int(PTAG_LOOKBACK, cmdopts->pass.lookback);
+            ptag_append_child(msg_out, lookback, NULL);
+        }
+
         /* unknown */
     } else {
         fatal(ERROR_USAGE, "unknown sub-command: %s", g.cmdopts->cmd);
+    }
+
+    /* nothing to do */
+    if (msg_out == NULL) {
+        debug("nothing to do, exiting...");
+        exit(0);
     }
 
     /* raw mode for "interact" */
