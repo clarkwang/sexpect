@@ -32,7 +32,6 @@
 static struct {
     struct st_cmdopts * cmdopts;
 
-    int   syncpipe[2];
     pid_t child;
     char  ptsname[32];
     int   fd_ptm, fd_listen;
@@ -68,16 +67,11 @@ static struct {
     char * expout[10];  /* $expect_out(N,string) */
 } g;
 
-static int
-daemonize(int nochdir, int noclose)
+static void
+daemonize(void)
 {
-    int fd, ret;
+    int   fd;
     pid_t pid;
-
-    ret = pipe(g.syncpipe);
-    if (ret < 0) {
-        fatal_sys("pipe");
-    }
 
     umask(0);
 
@@ -85,21 +79,7 @@ daemonize(int nochdir, int noclose)
     if (pid < 0) {
         fatal_sys("fork");
     } else if (pid) {
-        fd_set readfds;
-        struct timeval timeout;
-
-        close(g.syncpipe[1]);
-
-        FD_ZERO( & readfds);
-        timeout.tv_sec = 2;
-        timeout.tv_usec = 0;
-        FD_SET(g.syncpipe[0], & readfds);
-        select(g.syncpipe[0] + 1, & readfds, NULL, NULL, & timeout);
-        close(g.syncpipe[0]);
-
         exit(0);
-    } else {
-        close(g.syncpipe[0]);
     }
 
     setsid();
@@ -111,25 +91,18 @@ daemonize(int nochdir, int noclose)
         exit(0);
     }
 
-    if (! nochdir) {
-        chdir("/");
-    }
+    chdir("/");
 
-    if (! noclose) {
-        fd = open("/dev/null", O_RDWR);
-        dup2(fd, 0);
-        dup2(fd, 1);
-        dup2(fd, 2);
-#if 1
-        for (fd = 3; fd < 16; ++fd) {
-            if (fd != g.syncpipe[1]) {
-                close(fd);
-            }
+    fd = open("/dev/null", O_RDWR);
+    dup2(fd, 0);
+    dup2(fd, 1);
+    dup2(fd, 2);
+
+    for (fd = 3; fd < 16; ++fd) {
+        if (fd != g.fd_listen) {
+            close(fd);
         }
-#endif
     }
-
-    return 0;
 }
 
 static void
@@ -881,8 +854,6 @@ serv_loop(void)
 static void
 serv_init(void)
 {
-    g.syncpipe[0] = -1;
-    g.syncpipe[1] = -1;
     g.conn.sock   = -1;
 
     g.rawbufsize = SIZE_RAW_BUF;
@@ -925,11 +896,6 @@ serv_main(struct st_cmdopts * cmdopts)
         }
     }
 
-    /* be an evil daemon */
-    if (! g.cmdopts->debug) {
-        daemonize(1, 0);
-    }
-
     /* open logfile */
     if (spawn->logfile != NULL) {
         debug("open the logfile");
@@ -960,15 +926,15 @@ serv_main(struct st_cmdopts * cmdopts)
         fatal_sys("bind");
     }
 
-    /* listen() */
+    /* start listening before becoming a daemon so client does not need to wait
+     * before trying to connect */
     if (listen(g.fd_listen, 0) < 0) {
         fatal_sys("listen");
     }
 
-    /* inform the main() process to exit() */
-    if (g.syncpipe[1] >= 0) {
-        write(g.syncpipe[1], "", 1);
-        close(g.syncpipe[1]);
+    /* be an evil daemon */
+    if (! g.cmdopts->debug) {
+        daemonize();
     }
 
     /* spawn the child */
