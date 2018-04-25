@@ -12,7 +12,7 @@
 #include "pty.h"
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.0.6";
+char * const VERSION = "2.0.8";
 
 static struct {
     char * progname;

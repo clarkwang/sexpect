@@ -70,7 +70,6 @@ static struct {
 static void
 daemonize(void)
 {
-    int   fd;
     pid_t pid;
 
     umask(0);
@@ -91,18 +90,10 @@ daemonize(void)
         exit(0);
     }
 
+    /* move this to after exec() or the child's cwd would also be changed */
+#if 0
     chdir("/");
-
-    fd = open("/dev/null", O_RDWR);
-    dup2(fd, 0);
-    dup2(fd, 1);
-    dup2(fd, 2);
-
-    for (fd = 3; fd < 16; ++fd) {
-        if (fd != g.fd_listen) {
-            close(fd);
-        }
-    }
+#endif
 }
 
 static void
@@ -671,6 +662,7 @@ serv_pass(void)
         g.newcnt = 0;
     }
 #else
+    /* no -lookback support */
     if (g.newcnt > 0) {
         msg_out = ptag_new_raw(PTAG_OUTPUT, g.newcnt, g.rawnew);
         if (serv_msg_send(&msg_out, true) < 0) {
@@ -934,7 +926,21 @@ serv_main(struct st_cmdopts * cmdopts)
 
     /* be an evil daemon */
     if (! g.cmdopts->debug) {
+        int fd;
+
         daemonize();
+
+        fd = open("/dev/null", O_RDWR);
+        dup2(fd, 0);
+        dup2(fd, 1);
+        dup2(fd, 2);
+
+        /* N.B: Don't close ALL ! */
+        for (fd = 3; fd < 16; ++fd) {
+            if (fd != g.fd_listen && fd != g.cmdopts->spawn.logfd) {
+                close(fd);
+            }
+        }
     }
 
     /* spawn the child */
@@ -952,8 +958,16 @@ serv_main(struct st_cmdopts * cmdopts)
         if (execvp(g.cmdopts->spawn.argv[0], g.cmdopts->spawn.argv) < 0) {
             fatal_sys("exec(%s)", g.cmdopts->spawn.argv[0]);
         }
+    } else {
+        /* This must be after exec() or the following usage would not work
+         * as expected:
+         *
+         *  $ sexpect spawn cat a-file-in-current-dir
+         */
+        chdir("/");
+
+        g.child = pid;
     }
-    g.child = pid;
 
     /* set ptm to be non-blocking */
     if (1) {
