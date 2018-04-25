@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Start bc, calculate 1+2+3+... until the sum > 100.
+# Start bc, calculate 1 + 2 + 3 + ... until the sum > 100.
 #
 
 if ! which sexpect >& /dev/null; then
@@ -8,21 +8,11 @@ if ! which sexpect >& /dev/null; then
     exit 1
 fi
 
-tmpsock=$(mktemp /tmp/sexpect-tmp-XXXXXX.sock)
-if [[ ! -f $tmpsock ]]; then
-    echo "failed to create tmp sock file"
-    exit 1
-else
-    rm -f $tmpsock
-fi
+export SEXPECT_SOCKFILE=/tmp/sexpect-bc-iGciUZ.sock
+sexpect spawn -timeout 2 -nowait bc
 
-#-- Here we go! -----------------------#
-
-export SEXPECT_SOCKFILE=$tmpsock
-sexpect sp -t 2 -nowait env -i bc
-
-if ! sexpect ex warranty; then
-    sexpect k -kill
+if ! sexpect expect -cstr -re 'warranty.*[\r\n]'; then
+    sexpect kill -kill
 
     echo "oops! aren't you using GNU bc?"
     exit 1
@@ -31,17 +21,17 @@ fi
 sum=0
 max=100
 for ((i = 1; ; ++i)); do
-    sexpect s -cr "$sum + $i"
-    if ! sexpect ex -cstr -re '[\r\n]([0-9]+)[\r\n]'; then
-        sexpect k -kill
+    sexpect send -cr "$sum + $i"
+    if ! sexpect expect -cstr -re '[\r\n]([0-9]+)[\r\n]'; then
+        sexpect kill -kill
 
         echo "oops! something wrong"
         exit 1
     fi
-    sum=$(sexpect out -i 1)
+    sum=$(sexpect expect_out -index 1)
 
     if [[ $sum -gt $max ]]; then
-        sexpect s -c '\cd'
+        sexpect send -cstr '\cd'
         exit
     fi
 done
