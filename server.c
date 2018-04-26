@@ -613,7 +613,7 @@ serv_pass(void)
 {
     ptag_t * msg_out;
     int exitstatus;
-    int lookback, lines, nsend;
+    int lookback, newlines, nsend;
     char * pc = NULL, * psend = NULL;
 
     /* expect/interact/wait */
@@ -627,27 +627,59 @@ serv_pass(void)
     if (lookback == 0) {
         psend = g.rawnew;
     } else {
+        /* don't forget this ! */
         g.conn.pass.lookback = 0;
 
-        lines = 0;
+        newlines = 0;
         for (pc = g.rawnew + g.newcnt - 1; pc >= g.rawbuf; --pc) {
             if (pc[0] == '\n') {
-                if (++lines >= lookback) {
+                if (++newlines >= lookback) {
                     break;
                 }
             }
         }
-        if (lines > 0) {
-            if (pc < g.rawbuf) {
+        if (newlines == 0) {
+            /* [<] No NLs at all, e.g. the first shell prompt */
+            psend = g.rawbuf;
+        } else if (newlines < lookback) {
+            /* [<] There are not enough NLs in the whole buffer (old + new),
+             *     start from the first NL, or rawbuf if rawoffset is 0.
+             */
+            if (g.rawoffset == 0) {
+                psend = g.rawbuf;
+            } else {
+                /* find the first NL */
                 pc = strchr(g.rawbuf, '\n');
+                if (pc < g.rawnew) {
+                    /* [<] The fist NL is in the OLD buffer */
+                    psend = pc + 1;
+                } else {
+                    /* [<] The fist NL is in the NEW buffer */
+                    psend = g.rawnew;
+                }
             }
+        } else {
+            /* [<] Found #lookback NLs, `pc' now points to a NL */
             if (pc < g.rawnew) {
                 psend = pc + 1;
             } else {
                 psend = g.rawnew;
+
+                /* start the output from the nearest NL before `rawnew'
+                 * if possible */
+                for (pc = g.rawnew - 1; pc >= g.rawbuf; --pc) {
+                    if (pc[0] == '\n') {
+                        psend = pc + 1;
+                        break;
+                    }
+                }
+                if (pc < g.rawbuf) {
+                    /* [<] No NLs in old buffer */
+                    if (g.rawoffset == 0) {
+                        psend = g.rawbuf;
+                    }
+                }
             }
-        } else {
-            psend = g.rawbuf;
         }
     }
 
@@ -869,6 +901,8 @@ serv_main(struct st_cmdopts * cmdopts)
     pid_t pid;
     int ret;
     int fd_conn;
+    bool ontty = false;
+    struct winsize ws;
     struct sockaddr_un srv_addr = { 0 };
     struct st_spawn * spawn = NULL;
 
@@ -876,6 +910,17 @@ serv_main(struct st_cmdopts * cmdopts)
 
     g.cmdopts = cmdopts;
     spawn = & cmdopts->spawn;
+
+    /* get current winsize */
+    if (isatty(STDIN_FILENO) ) {
+        if (ioctl(STDIN_FILENO, TIOCGWINSZ, & ws) < 0) {
+            debug("ioctl(stdin, TIOCGWINSZ) failed: %s (%d)",
+                  strerror(errno), errno);
+        } else {
+            ontty = true;
+            debug("current winsize: %dx%d", ws.ws_col, ws.ws_row);
+        }
+    }
 
     /*
      * check if the sockpath is in use
@@ -955,6 +1000,17 @@ serv_main(struct st_cmdopts * cmdopts)
             debug("make the child ignore SIGHUP");
             sig_handle(SIGHUP, SIG_IGN);
         }
+
+        /* set pty winsize if we are on a tty */
+        if (ontty) {
+            if (ioctl(STDIN_FILENO, TIOCSWINSZ, & ws) < 0) {
+                debug("ioctl(ptm, TIOCSWINSZ) failed: %s (%d)",
+                    strerror(errno), errno);
+            } else {
+                debug("set ptm winsize to %dx%d", ws.ws_col, ws.ws_row);
+            }
+        }
+
         if (execvp(g.cmdopts->spawn.argv[0], g.cmdopts->spawn.argv) < 0) {
             fatal_sys("exec(%s)", g.cmdopts->spawn.argv[0]);
         }
