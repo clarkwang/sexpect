@@ -587,8 +587,21 @@ msg_recv(int fd)
 {
     unsigned char buf[PASS_MAX_MSG];
     uint32_t taglen; /* not including the header */
+    uint32_t magic;
     int ret;
     ptag_t * msg = NULL;
+
+    /* the magic number */
+    ret = readn(fd, & magic, 4);
+    if (ret < 4) {
+        debug("MAGIC number is 4 bytes but got %d", ret);
+        return NULL;
+    }
+    magic = net_get32( & magic);
+    if (magic != PASS_MAGIC) {
+        debug("MAIGC number is 0x%08x but got 0x%08x", PASS_MAGIC, magic);
+        return NULL;
+    }
 
     ret = readn(fd, buf, PTAG_HDR_SIZE);
     if (ret < PTAG_HDR_SIZE) {
@@ -627,6 +640,7 @@ ssize_t
 msg_send(int fd, ptag_t *msg)
 {
     unsigned char buf[PASS_MAX_MSG];
+    uint32_t magic;
     int ret, size;
 
     size = ptag_calc_size(msg);
@@ -638,6 +652,14 @@ msg_send(int fd, ptag_t *msg)
     if (size != ret) {
         fatal(ERROR_PROTO, "message is %d bytes but only encoded %d", 
             size, ret);
+    }
+
+    /* the magic number */
+    net_put32(PASS_MAGIC, & magic);
+    ret = writen(fd, & magic, 4);
+    if (ret < 4) {
+        debug("write(MAGIC) returned %d", ret);
+        return -1;
     }
 
     ret = writen(fd, buf, size);

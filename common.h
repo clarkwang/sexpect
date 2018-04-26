@@ -17,7 +17,7 @@
 #define o_OO(c1, c2)      ( (o_O(c1) << 3) + o_O(c2) )
 #define o_OOO(c1, c2, c3) ( (o_O(c1) << 6) + (o_O(c2) << 3) + o_O(c3) )
 
-#define PASS_MAGIC      0x57484a4d /* WHJM */
+#define PASS_MAGIC      0x4a55575a /* JUWZ */
 #define PASS_MAX_MSG    (16 * 1024)
 #define PASS_MAX_SEND   1024
 #define PASS_DEF_TMOUT  10

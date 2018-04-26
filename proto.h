@@ -11,12 +11,12 @@
 
 #define ROUND8(n)  ( (n+7) & ~7 )
 
-#define net_get16(src)        ntohs( *(uint16_t *)(src))
-#define net_get32(src)        ntohl( *(uint32_t *)(src))
-#define net_get64(src)       _ntohll(*(uint64_t *)(src))
-#define net_put16(src, dst)   *(uint16_t *)(dst) =  htons(src)
-#define net_put32(src, dst)   *(uint32_t *)(dst) =  htonl(src)
-#define net_put64(src, dst)   *(uint64_t *)(dst) = _htonll(src)
+#define net_get16(ptr)        ntohs( *(uint16_t *)(ptr))
+#define net_get32(ptr)        ntohl( *(uint32_t *)(ptr))
+#define net_get64(ptr)       _ntohll(*(uint64_t *)(ptr))
+#define net_put16(val, ptr)   *(uint16_t *)(ptr) =  htons(val)
+#define net_put32(val, ptr)   *(uint32_t *)(ptr) =  htonl(val)
+#define net_put64(val, ptr)   *(uint64_t *)(ptr) = _htonll(val)
 
 /* tag + type + length */
 #define PTAG_HDR_SIZE       8
@@ -29,8 +29,9 @@ typedef enum {
     PTYPE_TEXT   = 0x04,
     PTYPE_RAW    = 0x05,
     PTYPE_STRUCT = 0x06,
+
+    PTYPE_END__,
 } ptag_type_t;
-#define PTYPE_MAX PTYPE_STRUCT
 
 typedef struct ptag {
     struct ptag * child;

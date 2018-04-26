@@ -476,7 +476,7 @@ ptag_decode(uint8_t * buf, uint32_t buf_len, ptag_t ** head)
         type = tagtype & 0xff;
 
         /* check if type is valid */
-        if (type == 0 || type > PTYPE_MAX) {
+        if (type == 0 || type >= PTYPE_END__) {
             ptag_free(head);
             return -1;
         }
