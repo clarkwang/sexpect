@@ -272,7 +272,7 @@ strcasematch(const char *s, const char *pattern)
  * \o \oo \ooo
  * \e \E                (ESC)
  * \cx                  (CTRL-x)
- * \<unknown>           (ERROR)
+ * \<unknown>           <unknown>
  */
 char *
 strunesc(const char * in, char ** out_, int * len_)
@@ -343,11 +343,11 @@ strunesc(const char * in, char ** out_, int * len_)
                 }
                 if (isxdigit(in[3]) ) {
                     /* \xHH */
-                    out[len++] = x_HH(in[2], in[3]);
+                    out[len++] = c_H2(in[2], in[3]);
                     in += 4;
                 } else {
                     /* \xH */
-                    out[len++] = x_H(in[2]);
+                    out[len++] = c_H1(in[2]);
                     in += 3;
                 }
 
@@ -356,29 +356,33 @@ strunesc(const char * in, char ** out_, int * len_)
                 if (isodigit(in[2]) ) {
                     if (isodigit(in[3]) ) {
                         /* \ooo */
-                        int n = o_OOO(in[1], in[2], in[3]);
+                        int n = c_O3(in[1], in[2], in[3]);
                         if (n > 0xff) {
                             /* \oo */
-                            out[len++] = o_OO(in[1], in[2]);
+                            out[len++] = c_O2(in[1], in[2]);
                             in += 3;
                         } else {
                             /* \ooo */
-                            out[len++] = o_OOO(in[1], in[2], in[3]);
+                            out[len++] = c_O3(in[1], in[2], in[3]);
                             in += 4;
                         }
                     } else {
                         /* \oo */
-                        out[len++] = o_OO(in[1], in[2]);
+                        out[len++] = c_O2(in[1], in[2]);
                         in += 3;
                     }
                 } else {
                     /* \o */
-                    out[len++] = o_O(in[1]);
+                    out[len++] = c_O1(in[1]);
                     in += 2;
                 }
+            } else if (in[1] == '\0') {
+                out[len++] = '\\';
+                in += 1;
             } else {
-                free(out);
-                return NULL;
+                /* \<unknown> */
+                out[len++] = in[1];
+                in += 2;
             }
 
             continue;

@@ -10,12 +10,12 @@
 #define strcaseeq(s1, s2)  (strcasecmp(s1, s2) == 0)
 #define isodigit(c)        ( (c) >= '0' && (c) <= '7')
 
-#define x_H(c)       ( (c <= '9') ? (c - '0') : (toupper(c) - 'A' + 10) )
-#define x_HH(c1, c2) ( (x_H(c1) << 4) + x_H(c2) )
+#define c_H1(c)       ( (c <= '9') ? (c - '0') : (toupper(c) - 'A' + 10) )
+#define c_H2(c1, c2)  ( (c_H1(c1) << 4) + c_H1(c2) )
 
-#define o_O(c)            ( c - '0' )
-#define o_OO(c1, c2)      ( (o_O(c1) << 3) + o_O(c2) )
-#define o_OOO(c1, c2, c3) ( (o_O(c1) << 6) + (o_O(c2) << 3) + o_O(c3) )
+#define c_O1(c)           ( c - '0' )
+#define c_O2(c1, c2)      ( (c_O1(c1) << 3) + c_O1(c2) )
+#define c_O3(c1, c2, c3)  ( (c_O2(c1, c2) << 3) + c_O1(c3) )
 
 #define PASS_MAGIC      0x4a55575a /* JUWZ */
 #define PASS_MAX_MSG    (16 * 1024)
