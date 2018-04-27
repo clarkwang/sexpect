@@ -708,8 +708,8 @@ getargs(int argc, char **argv)
                 g.cmdopts.spawn.nohup = true;
             } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                 g.cmdopts.spawn.autowait = true;
-            } else if (str1of(arg, "-eof-on-exit", NULL) ) {
-                g.cmdopts.spawn.eof_on_exit = true;
+            } else if (str1of(arg, "-close-on-exit", NULL) ) {
+                g.cmdopts.spawn.close_on_exit = true;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
                 g.cmdopts.spawn.def_timeout = atoi(nextarg(argv, arg, & i) );
             } else if (str1of(arg, "-logfile", "-logf", NULL) ) {

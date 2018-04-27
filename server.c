@@ -854,7 +854,7 @@ serv_loop(void)
         if (g.fd_ptm >= 0) {
             if (FD_ISSET(g.fd_ptm, & readfds) ) {
                 serv_read_ptm();
-            } else if (g.cmdopts->spawn.eof_on_exit && g.SIGCHLDed) {
+            } else if (g.cmdopts->spawn.close_on_exit && g.SIGCHLDed) {
                 /* [<] The child has exited but the pty is still open which
                  *     means the child's children are still opening the pty. */
                 close(g.fd_ptm);

@@ -119,8 +119,8 @@ struct st_spawn {
     bool    nohup;
     bool    discard;
     bool    autowait;
-    bool    eof_on_exit; /* assume EOF when the child has exited even the
-                            child's children are still opening the pty */
+    bool    close_on_exit; /* Close ptm when the child exits even the child's
+                              children are still opening the pty */
     int     def_timeout;
     char  * logfile;
     int     logfd;
