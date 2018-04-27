@@ -27,7 +27,7 @@ ptym_open(char *pts_name, int pts_namesz)
 #if 1
     fdm = posix_openpt(O_RDWR);
 #else
-    /* FeeBSD does not have "/dev/ptmx" */
+    /* FeeBSD 11.1 does not have "/dev/ptmx" */
     fdm = open("/dev/ptmx", O_RDWR);
 #endif
     if (fdm < 0)

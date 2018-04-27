@@ -164,6 +164,21 @@ debug(const char *fmt, ...)
 }
 
 void
+error(const char *fmt, ...)
+{
+    if (g.debug != 0) {
+        va_list ap;
+        char buf[1024];
+
+        va_start(ap, fmt);
+        vsnprintf(buf, sizeof(buf), fmt, ap);
+        va_end(ap);
+
+        fprintf(stderr, "[ERROR] %s\r\n", buf);
+    }
+}
+
+void
 fatal(int rcode, const char *fmt, ...)
 {
     va_list ap;
@@ -603,34 +618,34 @@ msg_recv(int fd)
     }
     magic = net_get32( & magic);
     if (magic != PASS_MAGIC) {
-        debug("MAIGC number is 0x%08x but got 0x%08x", PASS_MAGIC, magic);
+        error("MAIGC number is 0x%08x but got 0x%08x", PASS_MAGIC, magic);
         return NULL;
     }
 
     ret = readn(fd, buf, PTAG_HDR_SIZE);
     if (ret < PTAG_HDR_SIZE) {
-        debug("header expected to be %d bytes but got %d",
-            PTAG_HDR_SIZE, ret);
+        error("header expected to be %d bytes but got %d", PTAG_HDR_SIZE, ret);
         return NULL;
     }
 
     taglen = ROUND8(net_get32(buf + PTAG_HDR_LEN_OFFSET) );
     if (taglen + PTAG_HDR_SIZE > sizeof(buf)) {
-        fatal(ERROR_PROTO, "message too large: %u > %zu",
-            taglen + PTAG_HDR_SIZE, sizeof(buf) );
+        error("message too big: %u > %zu", taglen + PTAG_HDR_SIZE, sizeof(buf));
+        return NULL;
     }
 
     ret = readn(fd, buf + PTAG_HDR_SIZE, taglen);
     if (ret < taglen) {
-        debug("tag.length is %d but got %d bytes", taglen, ret);
+        error("tag.length is %d but got %d bytes", taglen, ret);
         return NULL;
     }
 
     ret = ptag_decode(buf, PTAG_HDR_SIZE + taglen, & msg);
     if (ret < PTAG_HDR_SIZE + taglen) {
-        fatal(ERROR_PROTO,
-            "message is %d bytes but only decoded %d",
+        error("message is %d bytes but only decoded %d",
             PTAG_HDR_SIZE + taglen, ret);
+        msg_free( & msg);
+        return NULL;
     }
 
     return msg;
@@ -649,13 +664,14 @@ msg_send(int fd, ptag_t *msg)
 
     size = ptag_calc_size(msg);
     if (size > PASS_MAX_MSG) {
-        fatal(ERROR_PROTO, "message too large (%d bytes)", size);
+        error("message too large (%d bytes)", size);
+        return -1;
     }
 
     ret = ptag_encode(msg, buf, sizeof(buf) );
     if (size != ret) {
-        fatal(ERROR_PROTO, "message is %d bytes but only encoded %d", 
-            size, ret);
+        error("message is %d bytes but only encoded %d", size, ret);
+        return -1;
     }
 
     /* the magic number */

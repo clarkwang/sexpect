@@ -119,6 +119,8 @@ struct st_spawn {
     bool    nohup;
     bool    discard;
     bool    autowait;
+    bool    eof_on_exit; /* assume EOF when the child has exited even the
+                            child's children are still opening the pty */
     int     def_timeout;
     char  * logfile;
     int     logfd;
@@ -226,11 +228,12 @@ void debug_on(void);
 #if defined(__GNUC__)
 void bug(const char *fmt, ...)              __attribute__(( format(printf, 1, 2) ));
 void debug(const char *fmt, ...)            __attribute__(( format(printf, 1, 2) ));
+void error(const char *fmt, ...)            __attribute__(( format(printf, 1, 2) ));
 void fatal(int rcode, const char *fmt, ...) __attribute__(( format(printf, 2, 3) ));
 void fatal_sys(const char *fmt, ...)        __attribute__(( format(printf, 1, 2) ));
 #else
 void bug(const char *fmt, ...);
-void debug(const char *fmt, ...);
+void error(const char *fmt, ...);
 void fatal(int rcode, const char *fmt, ...);
 void fatal_sys(const char *fmt, ...);
 #endif

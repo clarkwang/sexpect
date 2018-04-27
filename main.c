@@ -12,7 +12,7 @@
 #include "pty.h"
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.0.13";
+char * const VERSION = "2.0.15";
 
 static struct {
     char * progname;
@@ -600,7 +600,7 @@ getargs(int argc, char **argv)
                     g.cmdopts.get.get_timeout = true;
                 } else if (str1of(arg, "-discard", NULL) ) {
                     g.cmdopts.get.get_discard = true;
-                } else if (str1of(arg, "-autowait", "-nowait", NULL) ) {
+                } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                     g.cmdopts.get.get_autowait = true;
                 } else {
                     usage_err = true;
@@ -667,7 +667,7 @@ getargs(int argc, char **argv)
 
             /* set */
         } else if (streq(g.cmdopts.cmd, "set") ) {
-            if (str1of(arg, "-autowait", "-nowait", NULL) ) {
+            if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                 g.cmdopts.set.set_autowait = true;
 
                 next = nextarg(argv, "-autowait", & i);
@@ -706,8 +706,10 @@ getargs(int argc, char **argv)
         } else if (streq(g.cmdopts.cmd, "spawn") ) {
             if (streq(arg, "-nohup") ) {
                 g.cmdopts.spawn.nohup = true;
-            } else if (str1of(arg, "-autowait", "-nowait", NULL) ) {
+            } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                 g.cmdopts.spawn.autowait = true;
+            } else if (str1of(arg, "-eof-on-exit", NULL) ) {
+                g.cmdopts.spawn.eof_on_exit = true;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
                 g.cmdopts.spawn.def_timeout = atoi(nextarg(argv, arg, & i) );
             } else if (str1of(arg, "-logfile", "-logf", NULL) ) {

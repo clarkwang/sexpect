@@ -29,6 +29,10 @@
 #error "SIZE_RAW_BUF too large compared to PASS_MAX_MSG"
 #endif
 
+/* N.B.:
+ *  - Remember to update `serv_init()' accordingly when adding new fields
+ *    to the struct.
+ */
 static struct {
     struct st_cmdopts * cmdopts;
 
@@ -194,28 +198,6 @@ serv_process_msg(void)
         return;
     }
 
-    if (g.fd_ptm < 0 || g.SIGCHLDed) {
-        switch (msg_in->tag) {
-
-            /* ignore */
-        case PTAG_INPUT:
-        case PTAG_WINCH:
-            msg_free( & msg_in);
-            return;
-
-            /* ERROR_EOF */
-        case PTAG_CLOSE:
-        case PTAG_SEND:
-            msg_free( & msg_in);
-
-            snprintf(buf, sizeof(buf), "pty closed");
-            msg_out = serv_new_error(ERROR_EOF, buf);
-            serv_msg_send(&msg_out, true);
-
-            return;
-        }
-    }
-
     switch (msg_in->tag) {
 
     case PTAG_DISCONN:
@@ -227,11 +209,13 @@ serv_process_msg(void)
     case PTAG_SEND:
     case PTAG_INPUT:
         {
-            int nwritten = write(g.fd_ptm, msg_in->v_raw, msg_in->length);
-            if (nwritten < 0) {
-                debug("write(ptm): %s (%d)", strerror(errno), errno);
-            } else if (nwritten < msg_in->length) {
-                debug("write(ptm) returned %d (< %d)", nwritten, msg_in->length);
+            if (g.fd_ptm >= 0) {
+                int nwritten = write(g.fd_ptm, msg_in->v_raw, msg_in->length);
+                if (nwritten < 0) {
+                    debug("write(ptm): %s (%d)", strerror(errno), errno);
+                } else if (nwritten < msg_in->length) {
+                    debug("write(ptm) returned %d (< %d)", nwritten, msg_in->length);
+                }
             }
             if (msg_in->tag == PTAG_SEND) {
                 /* FIXME: send back data which are not written to the ptm */
@@ -298,6 +282,10 @@ serv_process_msg(void)
             struct winsize size = { 0 };
             ptag_t * row, * col;
 
+            if (g.fd_ptm < 0) {
+                break;
+            }
+
             row = ptag_find_child(msg_in, PTAG_WINSIZE_ROW);
             col = ptag_find_child(msg_in, PTAG_WINSIZE_COL);
 
@@ -320,8 +308,10 @@ serv_process_msg(void)
         }
 
     case PTAG_CLOSE:
-        close(g.fd_ptm);
-        g.fd_ptm = -1;
+        if (g.fd_ptm >= 0) {
+            close(g.fd_ptm);
+            g.fd_ptm = -1;
+        }
         msg_out = ptag_new_struct(PTAG_ACK);
         serv_msg_send(&msg_out, true);
 
@@ -715,6 +705,9 @@ serv_pass(void)
         if (serv_expect() ) {
             msg_out = ptag_new_bool(PTAG_MATCHED, 1);
             serv_msg_send(&msg_out, true);
+
+            g.conn.passing = false;
+
             return;
         }
 
@@ -732,6 +725,8 @@ serv_pass(void)
             /* expect -eof */
             msg_out = ptag_new_struct(PTAG_EOF);
             serv_msg_send(&msg_out, true);
+
+            g.conn.passing = false;
         } else if ( (g.conn.pass.expflags & PASS_EXPECT_EXIT) != 0) {
             /* interact, wait */
             if ( ! g.waited && g.SIGCHLDed) {
@@ -740,6 +735,8 @@ serv_pass(void)
 
                 msg_out = ptag_new_int(PTAG_EXITED, exitstatus);
                 serv_msg_send(&msg_out, true);
+
+                g.conn.passing = false;
             } else {
                 /* wait for the child to exit */
             }
@@ -747,6 +744,8 @@ serv_pass(void)
             /* expect with a pattern */
             msg_out = serv_new_error(ERROR_EOF, "PTY closed");
             serv_msg_send(&msg_out, true);
+
+            g.conn.passing = false;
         }
 
         return;
@@ -756,6 +755,10 @@ serv_pass(void)
     if (exp_timed_out() ) {
         msg_out = serv_new_error(ERROR_TIMEOUT, "expect timed out");
         serv_msg_send(&msg_out, true);
+
+        g.conn.passing = false;
+
+        return;
     }
 }
 
@@ -770,6 +773,8 @@ serv_loop(void)
     struct timeval timeout;
 
     /* N.B.:
+     *  - The child's exiting does not necessarily mean the pty has been closed
+     *    because the child's children are still opening the pty.
      *  - read(ptm) returning EOF does not necessarily mean the child has
      *    exited.
      *  - After the child exits (SIGCHLD) and before closing ptm, there may
@@ -846,8 +851,15 @@ serv_loop(void)
         }
 
         /* new data from pty */
-        if (g.fd_ptm >= 0 && FD_ISSET(g.fd_ptm, & readfds) ) {
-            serv_read_ptm();
+        if (g.fd_ptm >= 0) {
+            if (FD_ISSET(g.fd_ptm, & readfds) ) {
+                serv_read_ptm();
+            } else if (g.cmdopts->spawn.eof_on_exit && g.SIGCHLDed) {
+                /* [<] The child has exited but the pty is still open which
+                 *     means the child's children are still opening the pty. */
+                close(g.fd_ptm);
+                g.fd_ptm = -1;
+            }
         }
         /* -discard is ON */
         if (g.cmdopts->spawn.discard && g.conn.sock < 0) {
@@ -997,17 +1009,13 @@ serv_main(struct st_cmdopts * cmdopts)
         close(g.fd_listen);
 
         if (cmdopts->spawn.nohup) {
-            debug("make the child ignore SIGHUP");
             sig_handle(SIGHUP, SIG_IGN);
         }
 
         /* set pty winsize if we are on a tty */
         if (ontty) {
             if (ioctl(STDIN_FILENO, TIOCSWINSZ, & ws) < 0) {
-                debug("ioctl(ptm, TIOCSWINSZ) failed: %s (%d)",
-                    strerror(errno), errno);
-            } else {
-                debug("set ptm winsize to %dx%d", ws.ws_col, ws.ws_row);
+                error("failed to set winsize: %s (%d)", strerror(errno), errno);
             }
         }
 
