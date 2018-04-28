@@ -1012,6 +1012,12 @@ serv_main(struct st_cmdopts * cmdopts)
             sig_handle(SIGHUP, SIG_IGN);
         }
 
+        if (g.cmdopts->spawn.TERM != NULL) {
+            if (setenv("TERM", g.cmdopts->spawn.TERM, 1) < 0) {
+                fatal_sys("setenv(TERM)");
+            }
+        }
+
         /* set pty winsize if we are on a tty */
         if (ontty) {
             if (ioctl(STDIN_FILENO, TIOCSWINSZ, & ws) < 0) {

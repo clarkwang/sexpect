@@ -116,6 +116,7 @@ enum {
 
 struct st_spawn {
     char ** argv;
+    char  * TERM;
     bool    nohup;
     bool    discard;
     bool    autowait;
@@ -129,9 +130,13 @@ struct st_spawn {
 
 struct st_send {
     bool   cstring;
+    bool   file;
+    bool   env;
+    bool   enter;
+
+    /* to server */
     char * data;
     int    len;
-    bool   enter;
 };
 
 struct st_expout {

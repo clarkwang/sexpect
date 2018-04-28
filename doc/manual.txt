@@ -67,6 +67,9 @@ spawn (sp)
     -nohup
         Let the spawned child process ignore SIGHUP.
 
+    -term TERM
+        Set the env var TERM for the child process.
+
     -timeout N | -t N
         Set the default timeout for the 'expect' command.
         The default value is 10 seconds. A negative value means no timeout.
@@ -155,16 +158,11 @@ send (s)
     -enter | -cr
         Append ENTER (\r) to the specified STRING before sending to the server.
 
-    -fd FD
-        (NOT_IMPLEMENTED_YET)
+    -file FILE | -f FILE
+        Send the content of the FILE to the server.
 
-
-    -file FILE
-        (NOT_IMPLEMENTED_YET)
-
-
-    -env NAME
-        (NOT_IMPLEMENTED_YET)
+    -env NAME | -var NAME
+        Send the value of env var NAME to the server.
 
 
 interact (i)

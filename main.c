@@ -3,6 +3,7 @@
 #define _GNU_SOURCE
 #endif
 
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -12,7 +13,7 @@
 #include "pty.h"
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.0.15";
+char * const VERSION = "2.0.17";
 
 static struct {
     char * progname;
@@ -94,6 +95,9 @@ spawn (sp)\n\
 \n\
     -nohup\n\
         Let the spawned child process ignore SIGHUP.\n\
+\n\
+    -term TERM\n\
+        Set the env var TERM for the child process.\n\
 \n\
     -timeout N | -t N\n\
         Set the default timeout for the 'expect' command.\n\
@@ -183,16 +187,11 @@ send (s)\n\
     -enter | -cr\n\
         Append ENTER (\\r) to the specified STRING before sending to the server.\n\
 \n\
-    -fd FD\n\
-        (NOT_IMPLEMENTED_YET)\n\
+    -file FILE | -f FILE\n\
+        Send the content of the FILE to the server.\n\
 \n\
-\n\
-    -file FILE\n\
-        (NOT_IMPLEMENTED_YET)\n\
-\n\
-\n\
-    -env NAME\n\
-        (NOT_IMPLEMENTED_YET)\n\
+    -env NAME | -var NAME\n\
+        Send the value of env var NAME to the server.\n\
 \n\
 \n\
 interact (i)\n\
@@ -400,6 +399,46 @@ nextarg(char ** argv, char * prev_arg, int * cur_idx)
     }
 
     return NULL;
+}
+
+static char *
+readfile(const char * fname, int * len)
+{
+    int fd, ret;
+    char * buf = NULL;
+    struct stat st;
+
+    * len = 0;
+
+    fd = open(fname, O_RDONLY);
+    if (fd < 0) {
+        fatal_sys("open(%s)", fname);
+    }
+
+    ret = fstat(fd, & st);
+    if (ret < 0) {
+        fatal_sys("fstat(%s)", fname);
+    }
+
+    if ( ! S_ISREG(st.st_mode) ) {
+        fatal(ERROR_USAGE, "not a regular file: %s", fname);
+    }
+
+    if (st.st_size > PASS_MAX_SEND) {
+        fatal(ERROR_USAGE,
+            "file too large (%d > %d)", (int)st.st_size, PASS_MAX_SEND);
+    }
+
+    buf = malloc(st.st_size);
+    ret = read(fd, buf, st.st_size);
+    if (ret < 0) {
+        fatal_sys("read(%s)", fname);
+    } else {
+        * len = ret;
+    }
+
+    close(fd);
+    return buf;
 }
 
 static void
@@ -640,10 +679,32 @@ getargs(int argc, char **argv)
 
             /* send */
         } else if (streq(g.cmdopts.cmd, "send") ) {
+            struct st_send * st = & g.cmdopts.send;
             if (str1of(arg, "-cstring", "-cstr", "-c", NULL) ) {
                 g.cmdopts.send.cstring = true;
             } else if (str1of(arg, "-cr", "-enter", NULL) ) {
                 g.cmdopts.send.enter = true;
+            } else if (str1of(arg, "-env", "-var", NULL) ) {
+                if (st->data != NULL) {
+                    usage_err = true;
+                    break;
+                }
+                st->env = true;
+                next = nextarg(argv, "-env", & i);
+                st->data = getenv(next);
+                if (st->data == NULL) {
+                    fatal(ERROR_USAGE, "env var not found: %s", next);
+                } else {
+                    st->len = strlen(st->data);
+                }
+            } else if (str1of(arg, "-file", "-f", NULL) ) {
+                if (st->data != NULL) {
+                    usage_err = true;
+                    break;
+                }
+                st->file = true;
+                next = nextarg(argv, "-file", & i);
+                st->data = readfile(next, & st->len);
             } else if (streq(arg, "--" ) ) {
                 if (argv[i + 1] != NULL) {
                     if (argv[i + 2] != NULL) {
@@ -710,6 +771,12 @@ getargs(int argc, char **argv)
                 g.cmdopts.spawn.autowait = true;
             } else if (str1of(arg, "-close-on-exit", NULL) ) {
                 g.cmdopts.spawn.close_on_exit = true;
+            } else if (str1of(arg, "-term", "-T", NULL) ) {
+                next = nextarg(argv, "-term", & i);
+                if (strlen(next) == 0) {
+                    fatal(ERROR_USAGE, "-term cannot be empty");
+                }
+                g.cmdopts.spawn.TERM = next;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
                 g.cmdopts.spawn.def_timeout = atoi(nextarg(argv, arg, & i) );
             } else if (str1of(arg, "-logfile", "-logf", NULL) ) {
@@ -781,6 +848,10 @@ getargs(int argc, char **argv)
 
         if (st->data == NULL) {
             st->data = "";
+        }
+
+        if ( (st->file || st->env) && st->cstring) {
+            fatal(ERROR_USAGE, "-cstring cannot be used with -file or -env");
         }
 
         if (st->data != NULL && st->cstring) {
