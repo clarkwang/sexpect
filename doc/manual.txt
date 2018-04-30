@@ -65,9 +65,9 @@ spawn (sp)
         to append to it.
 
     -nohup
-        Let the spawned child process ignore SIGHUP.
+        Make the spawned child process ignore SIGHUP.
 
-    -term TERM
+    -term TERM | -T TERM
         Set the env var TERM for the child process.
 
     -timeout N | -t N

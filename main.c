@@ -13,7 +13,7 @@
 #include "pty.h"
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.0.17";
+char * const VERSION = "2.0.18";
 
 static struct {
     char * progname;
@@ -94,9 +94,9 @@ spawn (sp)\n\
         to append to it.\n\
 \n\
     -nohup\n\
-        Let the spawned child process ignore SIGHUP.\n\
+        Make the spawned child process ignore SIGHUP.\n\
 \n\
-    -term TERM\n\
+    -term TERM | -T TERM\n\
         Set the env var TERM for the child process.\n\
 \n\
     -timeout N | -t N\n\
@@ -569,36 +569,37 @@ getargs(int argc, char **argv)
 
             /* expect */
         } else if (streq(g.cmdopts.cmd, "expect") ) {
+            struct st_pass * st = & g.cmdopts.pass;
             if (str1of(arg, "-exact", "-ex", "-re", NULL) ) {
                 next = nextarg(argv, "-exact", & i);
-                g.cmdopts.pass.pattern = next;
+                st->pattern = next;
                 if (str1of(arg, "-exact", "-ex", NULL) ) {
-                    g.cmdopts.pass.expflags |= PASS_EXPECT_EXACT;
+                    st->expflags |= PASS_EXPECT_EXACT;
                 } else if (streq(arg, "-re") ) {
-                    g.cmdopts.pass.expflags |= PASS_EXPECT_ERE;
+                    st->expflags |= PASS_EXPECT_ERE;
                 }
             } else if (str1of(arg, "-nocase", "-icase", "-ic", "-i", NULL) ) {
-                g.cmdopts.pass.expflags |= PASS_EXPECT_ICASE;
+                st->expflags |= PASS_EXPECT_ICASE;
             } else if (str1of(arg, "-cstring", "-cstr", "-c", NULL) ) {
-                g.cmdopts.pass.cstring = true;
+                st->cstring = true;
             } else if (streq(arg, "-eof") ) {
-                g.cmdopts.pass.expflags |= PASS_EXPECT_EOF;
+                st->expflags |= PASS_EXPECT_EOF;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
-                g.cmdopts.pass.has_timeout = true;
-                g.cmdopts.pass.timeout = atoi(nextarg(argv, arg, & i) );
-                if (g.cmdopts.pass.timeout < 0) {
-                    g.cmdopts.pass.timeout = -1;
+                st->has_timeout = true;
+                st->timeout = atoi(nextarg(argv, arg, & i) );
+                if (st->timeout < 0) {
+                    st->timeout = -1;
                 }
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown expect option: %s", arg);
             } else if (arg[0] == '\0') {
                 fatal(ERROR_USAGE, "pattern cannot be empty");
-            } else if ( (g.cmdopts.pass.expflags & PASS_EXPECT_EXACT) != 0) {
+            } else if ( (st->expflags & PASS_EXPECT_EXACT) != 0) {
                 usage_err = true;
                 break;
             } else {
-                g.cmdopts.pass.pattern = arg;
-                g.cmdopts.pass.expflags |= PASS_EXPECT_EXACT;
+                st->pattern = arg;
+                st->expflags |= PASS_EXPECT_EXACT;
             }
 
             /* expect_out */
@@ -681,9 +682,9 @@ getargs(int argc, char **argv)
         } else if (streq(g.cmdopts.cmd, "send") ) {
             struct st_send * st = & g.cmdopts.send;
             if (str1of(arg, "-cstring", "-cstr", "-c", NULL) ) {
-                g.cmdopts.send.cstring = true;
+                st->cstring = true;
             } else if (str1of(arg, "-cr", "-enter", NULL) ) {
-                g.cmdopts.send.enter = true;
+                st->enter = true;
             } else if (str1of(arg, "-env", "-var", NULL) ) {
                 if (st->data != NULL) {
                     usage_err = true;
@@ -712,15 +713,19 @@ getargs(int argc, char **argv)
                         usage_err = true;
                         break;
                     }
-                    g.cmdopts.send.data = argv[i + 1];
-                    g.cmdopts.send.len = strlen(argv[i + 1]);
+                    st->data = strdup(argv[i + 1]);
+                    st->len  = strlen(argv[i + 1]);
+
+                    memset(argv[i + 1], '*', st->len);
                 }
                 break;
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown send option: %s", arg);
-            } else if (g.cmdopts.send.data == NULL) {
-                g.cmdopts.send.data = arg;
-                g.cmdopts.send.len = strlen(arg);
+            } else if (st->data == NULL) {
+                st->data = strdup(arg);
+                st->len  = strlen(arg);
+
+                memset(arg, '*', st->len);
             } else {
                 usage_err = true;
                 break;
@@ -728,35 +733,36 @@ getargs(int argc, char **argv)
 
             /* set */
         } else if (streq(g.cmdopts.cmd, "set") ) {
+            struct st_set * st = & g.cmdopts.set;
             if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
-                g.cmdopts.set.set_autowait = true;
+                st->set_autowait = true;
 
                 next = nextarg(argv, "-autowait", & i);
                 if (str1of(next, "on", "1", NULL) ) {
-                    g.cmdopts.set.autowait = true;
+                    st->autowait = true;
                 } else if (str1of(next, "off", "0", NULL) ) {
-                    g.cmdopts.set.autowait = false;
+                    st->autowait = false;
                 } else {
                     fatal(ERROR_USAGE, "unexpected argument: %s", next);
                 }
             } else if (str1of(arg, "-discard", NULL ) ) {
-                g.cmdopts.set.set_discard = true;
+                st->set_discard = true;
 
                 next = nextarg(argv, "-discard", & i);
                 if (str1of(next, "on", "1", NULL) ) {
-                    g.cmdopts.set.discard = true;
+                    st->discard = true;
                 } else if (str1of(next, "off", "0", NULL) ) {
-                    g.cmdopts.set.discard = false;
+                    st->discard = false;
                 } else {
                     fatal(ERROR_USAGE, "unexpected argument: %s", next);
                 }
             } else if (str1of(arg, "-timeout", "-t", NULL ) ) {
-                g.cmdopts.set.set_timeout = true;
+                st->set_timeout = true;
                 next = nextarg(argv, "-timeout", & i);
-                g.cmdopts.set.timeout = atoi(next);
+                st->timeout = atoi(next);
 
-                if (g.cmdopts.set.timeout < 0) {
-                    g.cmdopts.set.timeout = -1;
+                if (st->timeout < 0) {
+                    st->timeout = -1;
                 }
             } else {
                 usage_err = true;
@@ -765,28 +771,29 @@ getargs(int argc, char **argv)
 
             /* spawn */
         } else if (streq(g.cmdopts.cmd, "spawn") ) {
+            struct st_spawn * st = & g.cmdopts.spawn;
             if (streq(arg, "-nohup") ) {
-                g.cmdopts.spawn.nohup = true;
+                st->nohup = true;
             } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
-                g.cmdopts.spawn.autowait = true;
-            } else if (str1of(arg, "-close-on-exit", NULL) ) {
-                g.cmdopts.spawn.close_on_exit = true;
+                st->autowait = true;
+            } else if (str1of(arg, "-close-on-exit", "-cloexit", NULL) ) {
+                st->close_on_exit = true;
             } else if (str1of(arg, "-term", "-T", NULL) ) {
                 next = nextarg(argv, "-term", & i);
                 if (strlen(next) == 0) {
                     fatal(ERROR_USAGE, "-term cannot be empty");
                 }
-                g.cmdopts.spawn.TERM = next;
+                st->TERM = next;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
-                g.cmdopts.spawn.def_timeout = atoi(nextarg(argv, arg, & i) );
+                st->def_timeout = atoi(nextarg(argv, arg, & i) );
             } else if (str1of(arg, "-logfile", "-logf", NULL) ) {
-                g.cmdopts.spawn.logfile = nextarg(argv, arg, & i);
+                st->logfile = nextarg(argv, arg, & i);
             } else if (str1of(arg, "-append", NULL) ) {
-                g.cmdopts.spawn.append = true;
+                st->append = true;
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown spawn option: %s", arg);
             } else {
-                g.cmdopts.spawn.argv = & argv[i];
+                st->argv = & argv[i];
 
                 break;
             }
@@ -813,7 +820,7 @@ getargs(int argc, char **argv)
 
     /* expect */
     if (streq(g.cmdopts.cmd, "expect") ) {
-        struct st_pass *st = & g.cmdopts.pass;
+        struct st_pass * st = & g.cmdopts.pass;
         int flags = st->expflags & (PASS_EXPECT_EOF | PASS_EXPECT_EXACT | PASS_EXPECT_ERE);
         if (count1bits(flags) > 1) {
             fatal(ERROR_USAGE, "-eof, -exact and -re are exclusive");

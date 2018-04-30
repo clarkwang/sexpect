@@ -939,7 +939,7 @@ serv_main(struct st_cmdopts * cmdopts)
      */
     if (1) {
         debug("check if another server is using the sockfile");
-        fd_conn = sock_connect(g.cmdopts->sockpath);
+        fd_conn = sock_connect(cmdopts->sockpath);
         if (fd_conn >= 0) {
             fatal(ERROR_GENERAL, "sockpath in use");
         }
@@ -965,12 +965,12 @@ serv_main(struct st_cmdopts * cmdopts)
     }
 
     /* or bind() would fail: Address already in use (EADDRINUSE) */
-    unlink(g.cmdopts->sockpath);
+    unlink(cmdopts->sockpath);
 
     /* bind() */
     memset(&srv_addr, 0, sizeof(srv_addr));
     srv_addr.sun_family = AF_LOCAL;
-    strcpy(srv_addr.sun_path, g.cmdopts->sockpath);
+    strcpy(srv_addr.sun_path, cmdopts->sockpath);
     if (bind(g.fd_listen, (struct sockaddr *) &srv_addr, sizeof(srv_addr) ) < 0) {
         fatal_sys("bind");
     }
@@ -982,7 +982,7 @@ serv_main(struct st_cmdopts * cmdopts)
     }
 
     /* be an evil daemon */
-    if (! g.cmdopts->debug) {
+    if (! cmdopts->debug) {
         int fd;
 
         daemonize();
@@ -994,7 +994,7 @@ serv_main(struct st_cmdopts * cmdopts)
 
         /* N.B: Don't close ALL ! */
         for (fd = 3; fd < 16; ++fd) {
-            if (fd != g.fd_listen && fd != g.cmdopts->spawn.logfd) {
+            if (fd != g.fd_listen && fd != cmdopts->spawn.logfd) {
                 close(fd);
             }
         }
@@ -1012,8 +1012,8 @@ serv_main(struct st_cmdopts * cmdopts)
             sig_handle(SIGHUP, SIG_IGN);
         }
 
-        if (g.cmdopts->spawn.TERM != NULL) {
-            if (setenv("TERM", g.cmdopts->spawn.TERM, 1) < 0) {
+        if (cmdopts->spawn.TERM != NULL) {
+            if (setenv("TERM", cmdopts->spawn.TERM, 1) < 0) {
                 fatal_sys("setenv(TERM)");
             }
         }
@@ -1025,8 +1025,8 @@ serv_main(struct st_cmdopts * cmdopts)
             }
         }
 
-        if (execvp(g.cmdopts->spawn.argv[0], g.cmdopts->spawn.argv) < 0) {
-            fatal_sys("exec(%s)", g.cmdopts->spawn.argv[0]);
+        if (execvp(cmdopts->spawn.argv[0], cmdopts->spawn.argv) < 0) {
+            fatal_sys("exec(%s)", cmdopts->spawn.argv[0]);
         }
     } else {
         /* This must be after exec() or the following usage would not work
@@ -1072,8 +1072,8 @@ serv_main(struct st_cmdopts * cmdopts)
     debug("ready to recv requests");
     serv_loop();
 
-    debug("removing %s", g.cmdopts->sockpath);
-    unlink(g.cmdopts->sockpath);
+    debug("removing %s", cmdopts->sockpath);
+    unlink(cmdopts->sockpath);
 
     exit(0);
 }

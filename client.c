@@ -425,7 +425,7 @@ cli_main(struct st_cmdopts * cmdopts)
 
         /* unknown */
     } else {
-        fatal(ERROR_USAGE, "unknown sub-command: %s", g.cmdopts->cmd);
+        fatal(ERROR_USAGE, "unknown sub-command: %s", cmdopts->cmd);
     }
 
     /* nothing to do */
