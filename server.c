@@ -169,6 +169,21 @@ serv_msg_send(ptag_t **msg, bool free_msg)
 }
 
 static void
+serv_hello(void)
+{
+    if (g.conn.sock < 0) {
+        return;
+    }
+
+    debug("sending HELLO");
+    if (msg_hello(g.conn.sock) < 0) {
+        debug("msg_hello failed (client dead?)");
+        close(g.conn.sock);
+        g.conn.sock = -1;
+    }
+}
+
+static void
 serv_disconn(void)
 {
     if (g.conn.sock < 0) {
@@ -199,6 +214,12 @@ serv_process_msg(void)
     }
 
     switch (msg_in->tag) {
+
+    case PTAG_HELLO:
+        debug("received HELLO");
+        serv_hello();
+
+        break;
 
     case PTAG_DISCONN:
         debug("received DISCONN");
@@ -793,9 +814,11 @@ serv_loop(void)
         fd_max = 0;
 
         /* listen to new connections */
-        FD_SET(g.fd_listen, & readfds);
-        if (g.fd_listen > fd_max) {
-            fd_max = g.fd_listen;
+        if (g.conn.sock < 0) {
+            FD_SET(g.fd_listen, & readfds);
+            if (g.fd_listen > fd_max) {
+                fd_max = g.fd_listen;
+            }
         }
 
         /* read from ptm */
@@ -839,14 +862,13 @@ serv_loop(void)
                 }
             } else {
                 if (g.conn.sock >= 0) {
-                    /* FIXME: Don't be so rude. */
-                    close(newconn);
-                } else {
-                    debug("new client connected");
-                    memset( & g.conn, 0, sizeof(g.conn) );
-                    g.conn.sock = newconn;
-                    clock_gettime(CLOCK_REALTIME, & g.conn.pass.start_time);
+                    bug("old conn still alive!");
+                    close(g.conn.sock);
                 }
+                debug("new client connected");
+                memset( & g.conn, 0, sizeof(g.conn) );
+                g.conn.sock = newconn;
+                clock_gettime(CLOCK_REALTIME, & g.conn.pass.start_time);
             }
         }
 

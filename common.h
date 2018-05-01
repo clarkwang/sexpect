@@ -72,6 +72,7 @@ enum {
      */
     PTAG_INFO,          /* pid, pts_name */
     PTAG_DISCONN,       /* disconnect gracefully */
+    PTAG_HELLO,
 
     /*
      * sub-tags
@@ -250,6 +251,7 @@ size_t   msg_size(ptag_t *msg);
 void     msg_free(ptag_t **msg);
 ptag_t * msg_recv(int fd);
 ssize_t  msg_send(int fd, ptag_t *msg);
+ssize_t  msg_hello(int fd);
 ssize_t  msg_disconn(int fd);
 
 ssize_t read_if_ready(int fd, char *buf, size_t n);

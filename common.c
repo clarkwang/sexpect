@@ -48,6 +48,7 @@ static struct v2n_map g_v2n_tag[] = {
     V2N_MAP(PTAG_EXPOUT_TEXT),
     V2N_MAP(PTAG_EXP_FLAGS),
     V2N_MAP(PTAG_EXP_TIMEOUT),
+    V2N_MAP(PTAG_HELLO),
     V2N_MAP(PTAG_INFO),
     V2N_MAP(PTAG_INPUT),
     V2N_MAP(PTAG_KILL),
@@ -92,8 +93,12 @@ v2n(struct v2n_map map[], int val, char *buf, size_t len)
             if (buf == NULL) {
                 return map[i].name;
             } else {
-                snprintf(buf, len, "%s", map[i].name);
-                return buf;
+                if (len > 0) {
+                    snprintf(buf, len, "%s", map[i].name);
+                    return buf;
+                } else {
+                    return map[i].name;
+                }
             }
         }
     }
@@ -689,6 +694,19 @@ msg_send(int fd, ptag_t *msg)
     } else {
         return ret;
     }
+}
+
+ssize_t
+msg_hello(int fd)
+{
+    int ret;
+    ptag_t * msg;
+
+    msg = ptag_new_struct(PTAG_HELLO);
+    ret = msg_send(fd, msg);
+    msg_free(&msg);
+
+    return ret;
 }
 
 ssize_t

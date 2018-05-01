@@ -61,6 +61,32 @@ cli_msg_recv(void)
 }
 
 static void
+cli_hello(void)
+{
+    ptag_t * msg = NULL;
+
+    debug("sending HELLO");
+    if (msg_hello(g.sock) < 0) {
+        fatal(ERROR_PROTO, "msg_hello failed");
+    }
+
+    while (true) {
+        if (msg != NULL) {
+            msg_free(&msg);
+        }
+
+        msg = cli_msg_recv();
+        if (msg->tag == PTAG_HELLO) {
+            debug("received HELLO");
+            break;
+        } else {
+            bug("cli_hello: not supposed to receive tag %s",
+                v2n_tag(msg->tag, NULL, 0) );
+        }
+    }
+}
+
+static void
 cli_disconn(int exitcode)
 {
     ptag_t * msg = NULL;
@@ -434,8 +460,17 @@ cli_main(struct st_cmdopts * cmdopts)
         exit(0);
     }
 
+    /* connect */
+    g.sock = sock_connect(cmdopts->sockpath);
+    if (g.sock < 0) {
+        fatal_sys("connect");
+    }
+
+    /* HELLO */
+    cli_hello();
+
     /* raw mode for "interact" */
-    if (cmdopts->passing && ! cmdopts->pass.no_input) {
+    if (streq(cmdopts->cmd, "interact") ) {
         /* user's tty to raw mode */
         if (tty_raw(STDIN_FILENO, &g.saved_termios) < 0)
             fatal_sys("tty_raw");
@@ -446,12 +481,6 @@ cli_main(struct st_cmdopts * cmdopts)
             fatal_sys("atexit");
 
         sig_handle(SIGWINCH, cli_sigWINCH);
-    }
-
-    /* connect */
-    g.sock = sock_connect(cmdopts->sockpath);
-    if (g.sock < 0) {
-        fatal_sys("connect");
     }
 
     /* send the initial command */
