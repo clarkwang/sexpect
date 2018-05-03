@@ -806,7 +806,9 @@ serv_loop(void)
      *    in "rawbuf" which has not been copied to "expbuf" for "expect".
      */
     while (! g.waited || g.conn.sock >= 0) {
-        if (g.SIGCHLDed && g.cmdopts->spawn.autowait && g.conn.sock < 0) {
+        if (g.cmdopts->spawn.autowait && g.SIGCHLDed && g.fd_ptm < 0
+            && g.conn.sock < 0)
+        {
             break;
         }
 

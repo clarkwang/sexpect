@@ -43,7 +43,7 @@ static void
 cli_msg_send(ptag_t *msg)
 {
     if (msg_send(g.sock, msg) < 0) {
-        fatal(ERROR_PROTO, "msg_send failed (server dead/busy?)");
+        fatal(ERROR_PROTO, "msg_send failed (server dead?)");
     }
 }
 
@@ -54,7 +54,7 @@ cli_msg_recv(void)
 
     msg = msg_recv(g.sock);
     if (msg == NULL) {
-        fatal(ERROR_PROTO, "msg_recv failed (server dead/busy?)");
+        fatal(ERROR_PROTO, "msg_recv failed (server dead?)");
     }
 
     return msg;
@@ -67,7 +67,7 @@ cli_hello(void)
 
     debug("sending HELLO");
     if (msg_hello(g.sock) < 0) {
-        fatal(ERROR_PROTO, "msg_hello failed");
+        fatal(ERROR_PROTO, "msg_hello failed (server dead?)");
     }
 
     while (true) {
@@ -93,7 +93,7 @@ cli_disconn(int exitcode)
 
     debug("sending DISCONN");
     if (msg_disconn(g.sock) < 0) {
-        fatal(ERROR_PROTO, "msg_disconn failed (server dead/busy?)");
+        fatal(ERROR_PROTO, "msg_disconn failed (server dead?)");
     }
 
     /* wait for DISCONN from server side */
@@ -223,6 +223,9 @@ cli_loop(void)
             } else {
                 /* press CTRL-] to detach */
                 if (nread == 1 && buf[0] == '\x1d') {
+#if 0
+                    system("tput cnorm");
+#endif
                     cli_disconn(0);
                 }
 

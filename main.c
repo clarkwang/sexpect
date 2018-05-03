@@ -13,7 +13,7 @@
 #include "pty.h"
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.1.0";
+char * const VERSION = "2.1.1";
 
 static struct {
     char * progname;
@@ -87,6 +87,10 @@ spawn (sp)\n\
     -autowait | -nowait\n\
         Turn on 'autowait' which by default is off. See sub-command 'set' for\n\
         more information.\n\
+\n\
+    -close-on-exit | -cloexit\n\
+        Close the pty after the child process has exited even if the child's\n\
+        child processes are still opening the pty. (Example: 'ssh -f')\n\
 \n\
     -logfile FILE | -logf FILE\n\
         All output from the child process will be copied to the log file.\n\
