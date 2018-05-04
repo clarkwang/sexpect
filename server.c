@@ -53,7 +53,7 @@ static struct {
             char * pattern;
             int    timeout;
             int    lookback;
-            struct timespec start_time;
+            struct timespec startime;
         } pass;
     } conn;
 
@@ -610,7 +610,7 @@ exp_timed_out(void)
 
     clock_gettime(CLOCK_REALTIME, & nowspec);
 
-    start = g.conn.pass.start_time.tv_sec + g.conn.pass.start_time.tv_nsec / 1e9;
+    start = g.conn.pass.startime.tv_sec + g.conn.pass.startime.tv_nsec / 1e9;
     now = nowspec.tv_sec + nowspec.tv_nsec / 1e9;
     if (fabs(now - start) > g.conn.pass.timeout) {
         return true;
@@ -792,6 +792,7 @@ serv_loop(void)
     socklen_t sock_len;
     fd_set readfds;
     struct timeval timeout;
+    struct st_spawn * spawn = & g.cmdopts->spawn;
 
     /* N.B.:
      *  - The child's exiting does not necessarily mean the pty has been closed
@@ -806,10 +807,36 @@ serv_loop(void)
      *    in "rawbuf" which has not been copied to "expbuf" for "expect".
      */
     while (! g.waited || g.conn.sock >= 0) {
-        if (g.cmdopts->spawn.autowait && g.SIGCHLDed && g.fd_ptm < 0
-            && g.conn.sock < 0)
-        {
+        /* -cloexit */
+        if (spawn->cloexit && g.SIGCHLDed && g.fd_ptm >= 0) {
+            /* [<] The child has exited but the pty is still open which
+             *     means the child's children are still opening the pty. */
+            static int n = 0;
+            if (++n > 1) {
+                debug("child exited, closing ptm (-cloexit)");
+                close(g.fd_ptm);
+                g.fd_ptm = -1;
+            }
+        }
+
+        /* -nowait */
+        if (spawn->autowait && g.SIGCHLDed && g.fd_ptm < 0 && g.conn.sock < 0) {
+            debug("child exited, exiting too (-nowait)");
             break;
+        }
+
+        /* -ttl */
+        if (spawn->ttl > 0 && g.conn.sock < 0) {
+            struct timespec nowspec;
+            double start, now;
+
+            clock_gettime(CLOCK_REALTIME, & nowspec);
+            start = spawn->startime.tv_sec + spawn->startime.tv_nsec / 1e9;
+            now = nowspec.tv_sec + nowspec.tv_nsec / 1e9;
+            if (fabs(now - start) > spawn->ttl) {
+                debug("TTL expired, bye");
+                break;
+            }
         }
 
         FD_ZERO( & readfds);
@@ -825,9 +852,13 @@ serv_loop(void)
 
         /* read from ptm */
         if (g.fd_ptm >= 0) {
-            FD_SET(g.fd_ptm, & readfds);
-            if (g.fd_ptm > fd_max) {
-                fd_max = g.fd_ptm;
+            /* [>] This checking is very important or the server may use 100%
+             *     CPU. (example: sexpect sp hexdump /dev/urandom) */
+            if (g.newcnt < g.rawbufsize - MAX_OLD_DATA) {
+                FD_SET(g.fd_ptm, & readfds);
+                if (g.fd_ptm > fd_max) {
+                    fd_max = g.fd_ptm;
+                }
             }
         }
 
@@ -870,7 +901,7 @@ serv_loop(void)
                 debug("new client connected");
                 memset( & g.conn, 0, sizeof(g.conn) );
                 g.conn.sock = newconn;
-                clock_gettime(CLOCK_REALTIME, & g.conn.pass.start_time);
+                clock_gettime(CLOCK_REALTIME, & g.conn.pass.startime);
             }
         }
 
@@ -878,15 +909,10 @@ serv_loop(void)
         if (g.fd_ptm >= 0) {
             if (FD_ISSET(g.fd_ptm, & readfds) ) {
                 serv_read_ptm();
-            } else if (g.cmdopts->spawn.close_on_exit && g.SIGCHLDed) {
-                /* [<] The child has exited but the pty is still open which
-                 *     means the child's children are still opening the pty. */
-                close(g.fd_ptm);
-                g.fd_ptm = -1;
             }
         }
         /* -discard is ON */
-        if (g.cmdopts->spawn.discard && g.conn.sock < 0) {
+        if (spawn->discard && g.conn.sock < 0) {
             /* mark "new" data as "old" when -discard is ON */
             if (g.newcnt > 0) {
                 g.rawnew += g.newcnt;
@@ -1061,6 +1087,7 @@ serv_main(struct st_cmdopts * cmdopts)
         chdir("/");
 
         g.child = pid;
+        clock_gettime(CLOCK_REALTIME, & spawn->startime);
     }
 
     /* set ptm to be non-blocking */

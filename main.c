@@ -12,8 +12,11 @@
 #include "common.h"
 #include "pty.h"
 
+#define str_true(s)   str1of(s, "1", "on",  "yes", "y", "true",  NULL)
+#define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
+
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.1.1";
+char * const VERSION = "2.1.3";
 
 static struct {
     char * progname;
@@ -742,23 +745,27 @@ getargs(int argc, char **argv)
                 st->set_autowait = true;
 
                 next = nextarg(argv, "-autowait", & i);
-                if (str1of(next, "on", "1", NULL) ) {
+                if (str_true(next) ) {
                     st->autowait = true;
-                } else if (str1of(next, "off", "0", NULL) ) {
+                } else if (str_false(next) ) {
                     st->autowait = false;
                 } else {
-                    fatal(ERROR_USAGE, "unexpected argument: %s", next);
+                    arg = next;
+                    usage_err = true;
+                    break;
                 }
             } else if (str1of(arg, "-discard", NULL ) ) {
                 st->set_discard = true;
 
                 next = nextarg(argv, "-discard", & i);
-                if (str1of(next, "on", "1", NULL) ) {
+                if (str_true(next) ) {
                     st->discard = true;
-                } else if (str1of(next, "off", "0", NULL) ) {
+                } else if (str_false(next) ) {
                     st->discard = false;
                 } else {
-                    fatal(ERROR_USAGE, "unexpected argument: %s", next);
+                    arg = next;
+                    usage_err = true;
+                    break;
                 }
             } else if (str1of(arg, "-timeout", "-t", NULL ) ) {
                 st->set_timeout = true;
@@ -781,7 +788,7 @@ getargs(int argc, char **argv)
             } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                 st->autowait = true;
             } else if (str1of(arg, "-close-on-exit", "-cloexit", NULL) ) {
-                st->close_on_exit = true;
+                st->cloexit = true;
             } else if (str1of(arg, "-term", "-T", NULL) ) {
                 next = nextarg(argv, "-term", & i);
                 if (strlen(next) == 0) {
@@ -790,6 +797,8 @@ getargs(int argc, char **argv)
                 st->TERM = next;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
                 st->def_timeout = atoi(nextarg(argv, arg, & i) );
+            } else if (str1of(arg, "-ttl", NULL) ) {
+                st->ttl = atoi(nextarg(argv, arg, & i) );
             } else if (str1of(arg, "-logfile", "-logf", NULL) ) {
                 st->logfile = nextarg(argv, arg, & i);
             } else if (str1of(arg, "-append", NULL) ) {
