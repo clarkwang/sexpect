@@ -608,7 +608,7 @@ exp_timed_out(void)
         return true;
     }
 
-    clock_gettime(CLOCK_REALTIME, & nowspec);
+    Clock_gettime(& nowspec);
 
     start = g.conn.pass.startime.tv_sec + g.conn.pass.startime.tv_nsec / 1e9;
     now = nowspec.tv_sec + nowspec.tv_nsec / 1e9;
@@ -830,7 +830,7 @@ serv_loop(void)
             struct timespec nowspec;
             double start, now;
 
-            clock_gettime(CLOCK_REALTIME, & nowspec);
+            Clock_gettime(& nowspec);
             start = spawn->startime.tv_sec + spawn->startime.tv_nsec / 1e9;
             now = nowspec.tv_sec + nowspec.tv_nsec / 1e9;
             if (fabs(now - start) > spawn->ttl) {
@@ -901,7 +901,7 @@ serv_loop(void)
                 debug("new client connected");
                 memset( & g.conn, 0, sizeof(g.conn) );
                 g.conn.sock = newconn;
-                clock_gettime(CLOCK_REALTIME, & g.conn.pass.startime);
+                Clock_gettime(& g.conn.pass.startime);
             }
         }
 
@@ -1087,7 +1087,7 @@ serv_main(struct st_cmdopts * cmdopts)
         chdir("/");
 
         g.child = pid;
-        clock_gettime(CLOCK_REALTIME, & spawn->startime);
+        Clock_gettime(& spawn->startime);
     }
 
     /* set ptm to be non-blocking */

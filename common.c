@@ -233,6 +233,20 @@ count1bits(unsigned n)
     return cnt;
 }
 
+int
+Clock_gettime(struct timespec * spec)
+{
+#ifdef CLOCK_MONOTONIC
+    if (clock_gettime(CLOCK_MONOTONIC, spec) == 0) {
+        return 0;
+    } else if (errno != EINVAL) {
+        return -1;
+    }
+#endif
+
+    return clock_gettime(CLOCK_REALTIME, spec);
+}
+
 bool
 str1of(const char *s, ...)
 {

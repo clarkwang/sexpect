@@ -3,6 +3,7 @@
 #define COMMON_H__
 
 #include <stdbool.h>
+#include <time.h>
 #include "proto.h"
 
 #define ARRAY_SIZE(a)      ( sizeof(a) / sizeof(a[0]) )
@@ -227,6 +228,7 @@ char * strunesc(const char * in, char ** out_, int * len_);
 int    name2sig(const char * signame);
 void   common_init(void);
 
+int  Clock_gettime(struct timespec * spec);
 int  count1bits(unsigned n);
 bool str1of(const char *s, ... /* , NULL */);
 bool strmatch(const char *s, const char *ere);
