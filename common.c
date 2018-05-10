@@ -236,15 +236,20 @@ count1bits(unsigned n)
 int
 Clock_gettime(struct timespec * spec)
 {
-#ifdef CLOCK_MONOTONIC
-    if (clock_gettime(CLOCK_MONOTONIC, spec) == 0) {
-        return 0;
-    } else if (errno != EINVAL) {
-        return -1;
-    }
-#endif
+    static bool firstime = true;
+    static bool clock = CLOCK_REALTIME;
 
-    return clock_gettime(CLOCK_REALTIME, spec);
+    if (firstime) {
+        firstime = false;
+#ifdef CLOCK_MONOTONIC
+        if (clock_gettime(CLOCK_MONOTONIC, spec) == 0) {
+            clock = CLOCK_MONOTONIC;
+            return 0;
+        }
+#endif
+    }
+
+    return clock_gettime(clock, spec);
 }
 
 bool
