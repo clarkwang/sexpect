@@ -63,6 +63,10 @@ spawn (sp)
         Close the pty after the child process has exited even if the child's
         child processes are still opening the pty. (Example: 'ssh -f')
 
+    -discard
+        Turn on 'discard' which by default is off. See sub-command 'set' for
+        more information.
+
     -logfile FILE | -logf FILE
         All output from the child process will be copied to the log file.
         By default the log file will be overwritten. Use '-append' if you want

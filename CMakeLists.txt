@@ -15,3 +15,8 @@ if (CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 add_executable(sexpect main.c common.c proto.c pty.c server.c client.c)
+
+find_library(HAVE_LIBRT rt)
+if (HAVE_LIBRT)
+    target_link_libraries(sexpect rt)
+endif()

@@ -16,7 +16,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.1.4";
+char * const VERSION = "2.1.5";
 
 static struct {
     char * progname;
@@ -94,6 +94,10 @@ spawn (sp)\n\
     -close-on-exit | -cloexit\n\
         Close the pty after the child process has exited even if the child's\n\
         child processes are still opening the pty. (Example: 'ssh -f')\n\
+\n\
+    -discard\n\
+        Turn on 'discard' which by default is off. See sub-command 'set' for\n\
+        more information.\n\
 \n\
     -logfile FILE | -logf FILE\n\
         All output from the child process will be copied to the log file.\n\
@@ -473,7 +477,8 @@ getargs(int argc, char **argv)
                 g.cmdopts.cmd = "help";
 
                 /* -version */
-            } else if (str1of(arg, "-version", "--version", "version", NULL) ) {
+            } else if (str1of(arg, "-version", "--version", "-ver",
+                              "version", "ver", NULL) ) {
                 g.cmdopts.cmd = "version";
 
                 /* -debug */
@@ -787,6 +792,8 @@ getargs(int argc, char **argv)
                 st->nohup = true;
             } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                 st->autowait = true;
+            } else if (str1of(arg, "-discard", NULL) ) {
+                st->discard = true;
             } else if (str1of(arg, "-close-on-exit", "-cloexit", NULL) ) {
                 st->cloexit = true;
             } else if (str1of(arg, "-term", "-T", NULL) ) {
