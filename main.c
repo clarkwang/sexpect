@@ -16,7 +16,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.1.5";
+char * const VERSION = "2.1.6";
 
 static struct {
     char * progname;
@@ -143,6 +143,10 @@ expect (exp, ex, x)\n\
 \n\
     -glob PATTERN | -gl PATTERN\n\
         (NOT_IMPLEMENTED_YET)\n\
+\n\
+    -lookback N | -lb N\n\
+        Show the most recent last N lines of output so you'd know where you\n\
+        were last time.\n\
 \n\
     -nocase, -icase, -i\n\
         Ignore case. Used with '-exact', '-glob' or '-re'.\n\
@@ -602,6 +606,9 @@ getargs(int argc, char **argv)
                 if (st->timeout < 0) {
                     st->timeout = -1;
                 }
+            } else if (str1of(arg, "-lookback", "-lb", NULL) ) {
+                next = nextarg(argv, "-lookback", & i);
+                g.cmdopts.pass.lookback = atoi(next);
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown expect option: %s", arg);
             } else if (arg[0] == '\0') {

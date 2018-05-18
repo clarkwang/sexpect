@@ -112,6 +112,10 @@ expect (exp, ex, x)
     -glob PATTERN | -gl PATTERN
         (NOT_IMPLEMENTED_YET)
 
+    -lookback N | -lb N
+        Show the most recent last N lines of output so you'd know where you
+        were last time.
+
     -nocase, -icase, -i
         Ignore case. Used with '-exact', '-glob' or '-re'.
 
