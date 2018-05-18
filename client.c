@@ -420,6 +420,7 @@ cli_main(struct st_cmdopts * cmdopts)
         ptag_t * pattern;
         ptag_t * timeout;
         ptag_t * lookback;
+        ptag_t * subcmd;
 
         /* "expect" without a pattern */
         if (cmdopts->pass.expflags == 0) {
@@ -432,6 +433,9 @@ cli_main(struct st_cmdopts * cmdopts)
         }
 
         msg_out = ptag_new_struct(PTAG_PASS);
+
+        subcmd = ptag_new_int(PTAG_PASS_SUBCMD, cmdopts->pass.subcmd);
+        ptag_append_child(msg_out, subcmd, NULL);
 
         expflags = ptag_new_int(PTAG_EXP_FLAGS, cmdopts->pass.expflags);
         ptag_append_child(msg_out, expflags, NULL);

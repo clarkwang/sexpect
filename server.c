@@ -3,6 +3,7 @@
 #define _GNU_SOURCE
 #endif
 
+#include <assert.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <termios.h>
@@ -49,6 +50,7 @@ static struct {
         int  sock;
         bool passing;
         struct {
+            int    subcmd;      /* expect, interact, wait */
             int    expflags;
             char * pattern;
             int    timeout;
@@ -253,6 +255,9 @@ serv_process_msg(void)
 
             g.conn.passing = true;
 
+            t = ptag_find_child(msg_in, PTAG_PASS_SUBCMD);
+            g.conn.pass.subcmd = t->v_int;
+
             t = ptag_find_child(msg_in, PTAG_EXP_FLAGS);
             g.conn.pass.expflags = t->v_int;
 
@@ -399,18 +404,9 @@ static void
 serv_read_ptm(void)
 {
     int nread, ntoread;
-    int oldcnt, dropsize;
+    int oldcnt;
 
-    /* keep at most MAX_OLD_DATA old data */
     oldcnt = g.rawnew - g.rawbuf;
-    if (oldcnt > MAX_OLD_DATA) {
-        dropsize = oldcnt - MAX_OLD_DATA;
-        oldcnt = MAX_OLD_DATA;
-
-        memmove(g.rawbuf, g.rawbuf + dropsize, oldcnt + g.newcnt);
-        g.rawnew -= dropsize;
-        g.rawoffset += dropsize;
-    }
 
     while (true) {
         ntoread = g.rawbufsize - (g.newcnt + oldcnt);
@@ -463,6 +459,32 @@ serv_read_ptm(void)
     g.ntotal += nread;
 }
 
+static void
+drop_old_data(void)
+{
+    int oldcnt, dropsize;
+
+    /* keep at most MAX_OLD_DATA old raw data */
+    oldcnt = g.rawnew - g.rawbuf;
+    if (oldcnt > MAX_OLD_DATA) {
+        dropsize = oldcnt - MAX_OLD_DATA;
+        oldcnt = MAX_OLD_DATA;
+
+        memmove(g.rawbuf, g.rawbuf + dropsize, oldcnt + g.newcnt);
+        g.rawnew -= dropsize;
+        g.rawoffset += dropsize;
+    }
+
+    /* keep at most MAX_OLD_DATA expect buffer data */
+    if (g.expcnt > MAX_OLD_DATA) {
+        dropsize = g.expcnt - MAX_OLD_DATA;
+
+        memmove(g.expbuf, g.expbuf + dropsize,  MAX_OLD_DATA);
+        g.expcnt = MAX_OLD_DATA;
+        g.expbuf[g.expcnt] = '\0';
+    }
+}
+
 /* copy to "expect" buffer with NULL bytes removed */
 static void
 buf_raw2expect(void)
@@ -476,6 +498,8 @@ buf_raw2expect(void)
     }
 
     ncopy = g.ntotal - g.expoffset;
+    assert(g.expcnt + ncopy <= g.expbufsize);
+
     g.expoffset = g.ntotal;
     copy_start = g.rawnew + g.newcnt - ncopy;
     for (i = 0; i < ncopy; ++i) {
@@ -717,11 +741,14 @@ serv_pass(void)
     }
 #endif
 
+    if (g.conn.pass.subcmd == PASS_SUBCMD_EXPECT) {
+        /* copy data from raw buf to expect buf */
+        buf_raw2expect();
+    }
+
     /* "expect" with a pattern */
     if ((g.conn.pass.expflags \
          & (PASS_EXPECT_EXACT | PASS_EXPECT_GLOB | PASS_EXPECT_ERE) ) != 0) {
-        /* copy data from raw buf to expect buf */
-        buf_raw2expect();
 
         if (serv_expect() ) {
             msg_out = ptag_new_bool(PTAG_MATCHED, 1);
@@ -732,8 +759,9 @@ serv_pass(void)
             return;
         }
 
-        /* expect -eof, interact, wait */
-    } else {
+        /* interact, wait */
+    } else if (g.conn.pass.subcmd == PASS_SUBCMD_INTERACT 
+               || g.conn.pass.subcmd == PASS_SUBCMD_WAIT) {
         g.expoffset = g.ntotal;
         g.expcnt = 0;
     }
@@ -743,13 +771,18 @@ serv_pass(void)
      */
     if (g.fd_ptm < 0 && g.expoffset >= g.ntotal) {
         if ((g.conn.pass.expflags & PASS_EXPECT_EOF) != 0) {
-            /* expect -eof */
+            /* [<] expect -eof */
+
+            g.expoffset = g.ntotal;
+            g.expcnt = 0;
+
             msg_out = ptag_new_struct(PTAG_EOF);
             serv_msg_send(&msg_out, true);
 
             g.conn.passing = false;
         } else if ( (g.conn.pass.expflags & PASS_EXPECT_EXIT) != 0) {
-            /* interact, wait */
+            /* [<] interact, wait */
+
             if ( ! g.waited && g.SIGCHLDed) {
                 waitpid(g.child, &  exitstatus, 0);
                 g.waited = true;
@@ -854,7 +887,7 @@ serv_loop(void)
         if (g.fd_ptm >= 0) {
             /* [>] This checking is very important or the server may use 100%
              *     CPU. (example: sexpect sp hexdump /dev/urandom) */
-            if (g.newcnt < g.rawbufsize - MAX_OLD_DATA) {
+            if (g.rawnew + g.newcnt < g.rawbuf + g.rawbufsize) {
                 FD_SET(g.fd_ptm, & readfds);
                 if (g.fd_ptm > fd_max) {
                     fd_max = g.fd_ptm;
@@ -933,6 +966,7 @@ serv_loop(void)
         /* expect/interact/wait */
         if (g.conn.sock >= 0 && g.conn.passing) {
             serv_pass();
+            drop_old_data();
         }
     }
 }

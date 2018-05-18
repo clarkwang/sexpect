@@ -35,6 +35,7 @@ enum {
     ERROR_EOF,
     ERROR_TIMEOUT,
     ERROR_EXITED,
+    ERROR_INTERNAL,
 
     /* THE END */
     ERROR_END__,
@@ -95,19 +96,26 @@ enum {
     PTAG_LOGFILE_APPEND,
     PTAG_NOHUP,
     PTAG_LOOKBACK,
+    PTAG_PASS_SUBCMD,   /* expect, interact, wait */
 
     /* THE END */
     PTAG_END__,
 };
 
 enum {
-    PASS_EXPECT_EXACT = 0x01,
-    PASS_EXPECT_GLOB  = 0x02,
-    PASS_EXPECT_ERE   = 0x04,
+    PASS_EXPECT_EXACT = 0x01,   /* expect -exact */
+    PASS_EXPECT_GLOB  = 0x02,   /* expect -glob */
+    PASS_EXPECT_ERE   = 0x04,   /* expect -re */
     PASS_EXPECT_EOF   = 0x08,   /* expect -eof */
     PASS_EXPECT_EXIT  = 0x10,   /* interact, wait */
-    PASS_EXPECT_ICASE = 0x20,
+    PASS_EXPECT_ICASE = 0x20,   /* expect -nocase */
     PASS_EXPECT_NOSUB = 0x40,
+};
+
+enum {
+    PASS_SUBCMD_EXPECT = 0x01,
+    PASS_SUBCMD_INTERACT,
+    PASS_SUBCMD_WAIT,
 };
 
 enum {
@@ -189,6 +197,7 @@ struct st_kill {
 
 /* expect, interact, wait */
 struct st_pass {
+    int    subcmd;      /* expect, interact, wait */
     bool   no_input;    /* expect, wait */
     bool   has_timeout;
     int    timeout;     /* negative value means infinite */

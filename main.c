@@ -16,7 +16,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.1.6";
+char * const VERSION = "2.1.7";
 
 static struct {
     char * progname;
@@ -512,6 +512,7 @@ getargs(int argc, char **argv)
                 } else if (str1of(arg, "expect", "exp", "ex", "x", NULL) ) {
                     g.cmdopts.cmd = "expect";
                     g.cmdopts.passing = true;
+                    g.cmdopts.pass.subcmd = PASS_SUBCMD_EXPECT;
                     g.cmdopts.pass.no_input = true;
 
                     /* expect_out */
@@ -528,6 +529,7 @@ getargs(int argc, char **argv)
                 } else if (str1of(arg, "interact", "i", NULL) ) {
                     g.cmdopts.cmd = "interact";
                     g.cmdopts.passing = true;
+                    g.cmdopts.pass.subcmd = PASS_SUBCMD_INTERACT;
                     g.cmdopts.pass.has_timeout = true;
                     g.cmdopts.pass.timeout = -1;
                     g.cmdopts.pass.expflags = PASS_EXPECT_EXIT;
@@ -556,6 +558,7 @@ getargs(int argc, char **argv)
                 } else if (str1of(arg, "wait", "w", NULL) ) {
                     g.cmdopts.cmd = "wait";
                     g.cmdopts.passing = true;
+                    g.cmdopts.pass.subcmd = PASS_SUBCMD_WAIT;
                     g.cmdopts.pass.no_input = true;
                     g.cmdopts.pass.has_timeout = true;
                     g.cmdopts.pass.timeout = -1;
