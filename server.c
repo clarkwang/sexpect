@@ -659,11 +659,21 @@ serv_pass(void)
     /* output from child */
 #if 1
     lookback = g.conn.pass.lookback;
-    if (lookback == 0) {
+    if (lookback <= 0) {
         psend = g.rawnew;
     } else {
         /* don't forget this ! */
         g.conn.pass.lookback = 0;
+
+        /* printf 'foo\nbar' | tail -n 1
+         *
+         *   vs.
+         *
+         * printf 'foo\nbar\n' | tail -n 1
+         */
+        if (g.ntotal > 0 && g.rawnew[g.newcnt - 1] == '\n') {
+            ++lookback;
+        }
 
         newlines = 0;
         for (pc = g.rawnew + g.newcnt - 1; pc >= g.rawbuf; --pc) {

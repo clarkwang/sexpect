@@ -20,3 +20,6 @@ find_library(HAVE_LIBRT rt)
 if (HAVE_LIBRT)
     target_link_libraries(sexpect rt)
 endif()
+
+enable_testing()
+add_subdirectory(tests)

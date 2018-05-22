@@ -4,6 +4,7 @@
 #endif
 
 #include <fcntl.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -16,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.1.7";
+char * const VERSION = "2.1.9";
 
 static struct {
     char * progname;
@@ -403,6 +404,40 @@ startup()
     common_init();
 }
 
+static int
+arg2int(const char * s)
+{
+    long lval;
+    char * pend = NULL;
+
+    if ( * s == '\0') {
+        fatal(ERROR_USAGE, "invalid number: %s", s);
+    }
+
+    lval = strtol(s, & pend, 10);
+    if (pend[0] != '\0') {
+        fatal(ERROR_USAGE, "invalid number: %s", s);
+    }
+
+    if (lval < INT_MIN || lval > INT_MAX) {
+        fatal(ERROR_USAGE, "out of range: %s", s);
+    }
+
+    return lval;
+}
+
+static int
+arg2uint(const char * s)
+{
+    int n = arg2int(s);
+
+    if (n < 0) {
+        fatal(ERROR_USAGE, "out of range: %s", s);
+    }
+
+    return n;
+}
+
 static char *
 nextarg(char ** argv, char * prev_arg, int * cur_idx)
 {
@@ -572,7 +607,7 @@ getargs(int argc, char **argv)
         } else if (streq(g.cmdopts.cmd, "chkerr") ) {
             if (str1of(arg, "-errno", "-err", "-no", "-code", NULL) ) {
                 next = nextarg(argv, "-errno", & i);
-                g.cmdopts.chkerr.errcode = atoi(next);
+                g.cmdopts.chkerr.errcode = arg2uint(next);
             } else if (streq(arg, "-is") ) {
                 next = nextarg(argv, "-is", & i);
                 g.cmdopts.chkerr.cmpto = next;
@@ -605,13 +640,13 @@ getargs(int argc, char **argv)
                 st->expflags |= PASS_EXPECT_EOF;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
                 st->has_timeout = true;
-                st->timeout = atoi(nextarg(argv, arg, & i) );
+                st->timeout = arg2int(nextarg(argv, arg, & i) );
                 if (st->timeout < 0) {
                     st->timeout = -1;
                 }
             } else if (str1of(arg, "-lookback", "-lb", NULL) ) {
                 next = nextarg(argv, "-lookback", & i);
-                g.cmdopts.pass.lookback = atoi(next);
+                g.cmdopts.pass.lookback = arg2uint(next);
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown expect option: %s", arg);
             } else if (arg[0] == '\0') {
@@ -628,10 +663,7 @@ getargs(int argc, char **argv)
         } else if (streq(g.cmdopts.cmd, "expect_out") ) {
             if (str1of(arg, "-index", "-i", NULL) ) {
                 next = nextarg(argv, "-index", & i);
-                if ( ! strmatch(next, "^[0-9]$") ) {
-                    fatal(ERROR_USAGE, "-index must be in range 0-9");
-                }
-                g.cmdopts.expout.index = atoi(next);
+                g.cmdopts.expout.index = arg2uint(next);
             } else {
                 usage_err = true;
                 break;
@@ -679,7 +711,7 @@ getargs(int argc, char **argv)
         } else if (streq(g.cmdopts.cmd, "interact") ) {
             if (str1of(arg, "-lookback", "-lb", NULL) ) {
                 next = nextarg(argv, "-lookback", & i);
-                g.cmdopts.pass.lookback = atoi(next);
+                g.cmdopts.pass.lookback = arg2uint(next);
             } else {
                 usage_err = true;
                 break;
@@ -687,8 +719,8 @@ getargs(int argc, char **argv)
 
             /* kill */
         } else if (streq(g.cmdopts.cmd, "kill") ) {
-            if (strmatch(arg, "-[0-9]+") ) {
-                g.cmdopts.kill.signal = atoi(arg + 1);
+            if (strmatch(arg, "^-[0-9]+$") ) {
+                g.cmdopts.kill.signal = arg2uint(arg + 1);
             } else if (arg[0] == '-') {
                 g.cmdopts.kill.signal = name2sig(arg + 1);
                 if (g.cmdopts.kill.signal < 0) {
@@ -785,7 +817,7 @@ getargs(int argc, char **argv)
             } else if (str1of(arg, "-timeout", "-t", NULL ) ) {
                 st->set_timeout = true;
                 next = nextarg(argv, "-timeout", & i);
-                st->timeout = atoi(next);
+                st->timeout = arg2int(next);
 
                 if (st->timeout < 0) {
                     st->timeout = -1;
@@ -813,9 +845,9 @@ getargs(int argc, char **argv)
                 }
                 st->TERM = next;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
-                st->def_timeout = atoi(nextarg(argv, arg, & i) );
+                st->def_timeout = arg2int(nextarg(argv, arg, & i) );
             } else if (str1of(arg, "-ttl", NULL) ) {
-                st->ttl = atoi(nextarg(argv, arg, & i) );
+                st->ttl = arg2uint(nextarg(argv, arg, & i) );
             } else if (str1of(arg, "-logfile", "-logf", NULL) ) {
                 st->logfile = nextarg(argv, arg, & i);
             } else if (str1of(arg, "-append", NULL) ) {

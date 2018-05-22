@@ -239,7 +239,7 @@ int
 Clock_gettime(struct timespec * spec)
 {
     static bool firstime = true;
-    static bool clock = CLOCK_REALTIME;
+    static clockid_t clock = CLOCK_REALTIME;
 
     if (firstime) {
         firstime = false;
