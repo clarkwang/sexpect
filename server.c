@@ -11,6 +11,8 @@
 #include <time.h>
 #include <signal.h>
 #include <regex.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -1067,6 +1069,16 @@ serv_main(struct st_cmdopts * cmdopts)
     strcpy(srv_addr.sun_path, cmdopts->sockpath);
     if (bind(g.fd_listen, (struct sockaddr *) &srv_addr, sizeof(srv_addr) ) < 0) {
         fatal_sys("bind");
+    }
+
+    /* convert to full pathname */
+    {
+        char * fullpath = realpath(cmdopts->sockpath, NULL);
+        if (fullpath == NULL) {
+            fatal_sys("realpath(%s)", cmdopts->sockpath);
+        } else {
+            cmdopts->sockpath = fullpath;
+        }
     }
 
     /* start listening before becoming a daemon so client does not need to wait
