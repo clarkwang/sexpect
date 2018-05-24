@@ -80,7 +80,9 @@ daemonize(void)
 {
     pid_t pid;
 
+#if 0
     umask(0);
+#endif
 
     pid = fork();
     if (pid < 0) {
@@ -91,12 +93,14 @@ daemonize(void)
 
     setsid();
 
+#if 0
     pid = fork();
     if (pid < 0) {
         fatal_sys("fork");
     } else if (pid) {
         exit(0);
     }
+#endif
 
     /* move this to after exec() or the child's cwd would also be changed */
 #if 0
@@ -1041,7 +1045,11 @@ serv_main(struct st_cmdopts * cmdopts)
         }
     }
 
-    /* open logfile */
+    /* open logfile
+     *
+     * NOTE: This must be done before chdir("/") in case the logfile is
+     *       specified with a relative pathname.
+     */
     if (spawn->logfile != NULL) {
         debug("open the logfile");
         if (spawn->append) {
@@ -1067,6 +1075,8 @@ serv_main(struct st_cmdopts * cmdopts)
     memset(&srv_addr, 0, sizeof(srv_addr));
     srv_addr.sun_family = AF_LOCAL;
     strcpy(srv_addr.sun_path, cmdopts->sockpath);
+    /* don't let other users connect to my server! */
+    umask(0077);
     if (bind(g.fd_listen, (struct sockaddr *) &srv_addr, sizeof(srv_addr) ) < 0) {
         fatal_sys("bind");
     }
