@@ -28,10 +28,13 @@ running in background. You can *attach* to and *detach* from it as needed.
                                                                                       
 Tested on:                                                                            
                                                                                       
+* OpenWRT 15.05.1, ramips/mt7620 (on [Newifi Mini, or Lenovo Y1 v1][newifi])
 * Debian Linux 9 (Stretch)                                                            
 * macOS 10.13 (High Sierra)                                                           
 * FreeBSD 11.1                                                                        
 * Cygwin on Windows 10
+
+  [newifi]: https://wiki.openwrt.org/toh/lenovo/lenovo_y1_v1
     
 # Manual
 
