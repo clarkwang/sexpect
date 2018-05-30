@@ -34,7 +34,7 @@ Tested on:
 * FreeBSD 11.1                                                                        
 * Cygwin on Windows 10
 
-  [newifi]: https://wiki.openwrt.org/toh/lenovo/lenovo_y1_v1
+  [newifi]: https://openwrt.org/toh/lenovo/lenovo_y1_v1
     
 # Manual
 
