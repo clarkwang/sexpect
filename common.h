@@ -92,6 +92,7 @@ enum {
     PTAG_EXPOUT_INDEX,
     PTAG_DISCARD,
     PTAG_AUTOWAIT,
+    PTAG_TTL,
     PTAG_LOGFILE,
     PTAG_LOGFILE_APPEND,
     PTAG_NOHUP,
@@ -167,6 +168,8 @@ struct st_set {
     bool discard;
     bool set_timeout;
     int  timeout;
+    bool set_ttl;
+    int  ttl;
 };
 
 struct st_get {
@@ -189,6 +192,9 @@ struct st_get {
 
     bool get_autowait;
     bool autowait;
+
+    bool get_ttl;
+    int  ttl;
 };
 
 struct st_kill {

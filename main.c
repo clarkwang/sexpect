@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT = "sexpect";
-char * const VERSION = "2.1.11";
+char * const VERSION = "2.1.13";
 
 static struct {
     char * progname;
@@ -538,6 +538,7 @@ getargs(int argc, char **argv)
                 /* chkerr */
                 if (str1of(arg, "chkerr", "chk", "ck", "err", NULL) ) {
                     g.cmdopts.cmd = "chkerr";
+                    g.cmdopts.chkerr.errcode = -1;
 
                     /* close */
                 } else if (str1of(arg, "close", "c", NULL) ) {
@@ -696,6 +697,8 @@ getargs(int argc, char **argv)
                     g.cmdopts.get.get_discard = true;
                 } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                     g.cmdopts.get.get_autowait = true;
+                } else if (str1of(arg, "-ttl", NULL) ) {
+                    g.cmdopts.get.get_ttl = true;
                 } else {
                     usage_err = true;
                     break;
@@ -822,6 +825,14 @@ getargs(int argc, char **argv)
                 if (st->timeout < 0) {
                     st->timeout = -1;
                 }
+            } else if (str1of(arg, "-ttl", NULL ) ) {
+                st->set_ttl = true;
+                next = nextarg(argv, "-timeout", & i);
+                st->ttl = arg2int(next);
+
+                if (st->ttl < 0) {
+                    st->ttl = 0;
+                }
             } else {
                 usage_err = true;
                 break;
@@ -847,7 +858,10 @@ getargs(int argc, char **argv)
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
                 st->def_timeout = arg2int(nextarg(argv, arg, & i) );
             } else if (str1of(arg, "-ttl", NULL) ) {
-                st->ttl = arg2uint(nextarg(argv, arg, & i) );
+                st->ttl = arg2int(nextarg(argv, arg, & i) );
+                if (st->ttl < 0) {
+                    st->ttl = 0;
+                }
             } else if (str1of(arg, "-logfile", "-logf", NULL) ) {
                 st->logfile = nextarg(argv, arg, & i);
             } else if (str1of(arg, "-append", NULL) ) {

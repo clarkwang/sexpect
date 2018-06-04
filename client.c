@@ -287,6 +287,10 @@ cli_loop(void)
                     t = ptag_find_child(msg_in, PTAG_PPID);
                     printf("%s%d\n", get->get_all ? "Parent PID: " : "", t->v_int);
                 }
+                if (get->get_all || get->get_ttl) {
+                    t = ptag_find_child(msg_in, PTAG_TTL);
+                    printf("%s%d\n", get->get_all ? "       TTL: " : "", t->v_bool);
+                }
                 if (get->get_all || get->get_timeout) {
                     t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT);
                     printf("%s%d\n", get->get_all ? "   Timeout: " : "", t->v_int);
@@ -326,7 +330,7 @@ cli_chkerr(void)
 {
     struct st_chkerr * chkerr = & g.cmdopts->chkerr;
 
-    if (chkerr->errcode == 0 || chkerr->cmpto == NULL) {
+    if (chkerr->errcode < 0 || chkerr->cmpto == NULL) {
         fatal(ERROR_USAGE, "both -errno and -is must be specified");
     }
 
@@ -411,6 +415,11 @@ cli_main(struct st_cmdopts * cmdopts)
         if (cmdopts->set.set_timeout) {
             ptag_append_child(msg_out,
                 ptag_new_int(PTAG_EXP_TIMEOUT, cmdopts->set.timeout),
+                NULL);
+        }
+        if (cmdopts->set.set_ttl) {
+            ptag_append_child(msg_out,
+                ptag_new_int(PTAG_TTL, cmdopts->set.ttl),
                 NULL);
         }
 

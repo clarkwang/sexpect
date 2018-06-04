@@ -377,6 +377,9 @@ serv_process_msg(void)
             if ( (t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT) ) != NULL) {
                 g.cmdopts->spawn.def_timeout = t->v_int;
             }
+            if ( (t = ptag_find_child(msg_in, PTAG_TTL) ) != NULL) {
+                g.cmdopts->spawn.ttl = t->v_int;
+            }
 
             msg_out = ptag_new_struct(PTAG_ACK);
             serv_msg_send(&msg_out, true);
@@ -396,6 +399,7 @@ serv_process_msg(void)
                 ptag_new_int(PTAG_EXP_TIMEOUT, g.cmdopts->spawn.def_timeout),
                 ptag_new_bool(PTAG_AUTOWAIT,   g.cmdopts->spawn.autowait),
                 ptag_new_bool(PTAG_DISCARD,    g.cmdopts->spawn.discard),
+                ptag_new_int(PTAG_TTL,         g.cmdopts->spawn.ttl),
                 NULL);
             serv_msg_send( & msg_out, true);
 

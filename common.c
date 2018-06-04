@@ -68,6 +68,7 @@ static struct v2n_map g_v2n_tag[] = {
     V2N_MAP(PTAG_SEND),
     V2N_MAP(PTAG_SET),
     V2N_MAP(PTAG_TIMED_OUT),
+    V2N_MAP(PTAG_TTL),
     V2N_MAP(PTAG_WINCH),
     V2N_MAP(PTAG_WINSIZE_COL),
     V2N_MAP(PTAG_WINSIZE_ROW),
