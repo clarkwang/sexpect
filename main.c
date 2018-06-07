@@ -133,7 +133,7 @@ expect (exp, ex, x)\n\
 \n\
   OPTIONS\n\
     -cstring | -cstr | -c\n\
-        C style bashslash escapes would be recognized and replaced in STRING\n\
+        C style backslash escapes would be recognized and replaced in STRING\n\
         or PATTERN. See 'send' for more information.\n\
 \n\
     -eof\n\
@@ -186,7 +186,7 @@ send (s)\n\
 \n\
   OPTIONS:\n\
     -cstring | -cstr | -c\n\
-        C style bashslash escapes would be recognized and replaced before\n\
+        C style backslash escapes would be recognized and replaced before\n\
         sending to the server.\n\
 \n\
         The following standard C escapes are supported:\n\

@@ -584,9 +584,8 @@ name2sig(const char * name)
 void
 sig_handle(int signo, void (*handler)(int) )
 {
-    struct sigaction act;
+    struct sigaction act = { 0 };
 
-    memset(&act, 0, sizeof(act) );
     act.sa_handler = handler;
     sigaction(signo, &act, NULL);
 }
