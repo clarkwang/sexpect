@@ -22,6 +22,7 @@ trap '{ sexpect c && sexpect w; } >& /dev/null' EXIT
 sexpect spawn \
     ssh -o PreferredAuthentications=keyboard-interactive,password \
         -o NumberOfPasswordPrompts=1 \
+        -o ControlPath=none \
         "$@"
 
 while true; do

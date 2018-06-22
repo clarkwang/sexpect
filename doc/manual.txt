@@ -82,6 +82,11 @@ spawn (sp)
         Set the default timeout for the 'expect' command.
         The default value is 10 seconds. A negative value means no timeout.
 
+    -ttl N
+        The background server process will close the PTY and exit N seconds
+        after the child process is spawned. Usually this would cause the child
+        to receive SIGHUP and be killed.
+
 expect (exp, ex, x)
 -------------------
 
@@ -326,6 +331,9 @@ set
     -timeout N | -t N
         See 'spawn'.
 
+    -ttl N
+        See 'spawn'.
+
 get
 ----
 
@@ -356,6 +364,9 @@ get
 
     -timeout | -t
         Get the current default timeout value.
+
+    -ttl
+        Get the TTL value. See 'spawn' for details.
 
 BUGS:
   Report bugs to Clark Wang <dearvoid @ gmail.com> or

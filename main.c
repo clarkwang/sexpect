@@ -16,8 +16,8 @@
 #define str_true(s)   str1of(s, "1", "on",  "yes", "y", "true",  NULL)
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
-char * const SEXPECT = "sexpect";
-char * const VERSION = "2.1.13";
+char * const SEXPECT  = "sexpect";
+char * const VERSION_ = "2.1.13";
 
 static struct {
     char * progname;
@@ -114,6 +114,11 @@ spawn (sp)\n\
     -timeout N | -t N\n\
         Set the default timeout for the 'expect' command.\n\
         The default value is 10 seconds. A negative value means no timeout.\n\
+\n\
+    -ttl N\n\
+        The background server process will close the PTY and exit N seconds\n\
+        after the child process is spawned. Usually this would cause the child\n\
+        to receive SIGHUP and be killed.\n\
 \n\
 expect (exp, ex, x)\n\
 -------------------\n\
@@ -359,6 +364,9 @@ set\n\
     -timeout N | -t N\n\
         See 'spawn'.\n\
 \n\
+    -ttl N\n\
+        See 'spawn'.\n\
+\n\
 get\n\
 ----\n\
 \n\
@@ -389,6 +397,9 @@ get\n\
 \n\
     -timeout | -t\n\
         Get the current default timeout value.\n\
+\n\
+    -ttl\n\
+        Get the TTL value. See 'spawn' for details.\n\
 \n\
 BUGS:\n\
   Report bugs to Clark Wang <dearvoid @ gmail.com> or\n\
@@ -956,7 +967,7 @@ getargs(int argc, char **argv)
 
         /* version */
     } else if (streq(g.cmdopts.cmd, "version") ) {
-        printf("%s %s\n", SEXPECT, VERSION);
+        printf("%s %s\n", SEXPECT, VERSION_);
         exit(0);
     }
 
