@@ -1,18 +1,18 @@
 # What's `sexpect`
 
-[`Expect`][expect] is for Tcl. [`Expect.pm`][expect.pm] is for Perl.
-[`Pexpect`][pexpect] is for Python.  What's for shells (bash, ksh, zsh, ...)?
-`sexpect`!
+`sexpect` is another implementation of [`Expect`][expect] (`s` is for either *simple* or
+*super*).
 
-Unlike [`Expect`][expect], [`Expect.pm`][expect.pm], [`Pexpect`][pexpect] or
-other similar `Expect` implementations, `sexpect` is not bound to any specific
-programming languages so it can be used with any languages which support running
-external commands. Users who write shell scripts would love this because they
-don't have to learn other languages just to use the *Expect* functionality.
+Unlike [`Expect`][expect] (Tcl), [`Expect.pm`][expect.pm] (Perl),
+[`Pexpect`][pexpect] (Python) or other similar
+`Expect` implementations, `sexpect` is not bound to any specific programming
+languages so it can be used with any languages which support running external
+commands. Users who write shell (like `Bash`) scripts would love this because
+they don't have to learn other languages just to use `Expect` or the *Expect*
+module.
 
 Another interesting `sexpect` feature is that the spawned child process is
-running in background. You can *attach* to and *detach* from it as needed (just
-like [GNU screen][screen]).
+running in background. You can *attach* to and *detach* from it as needed.
 
 # How to build
 
@@ -47,4 +47,3 @@ See the [examples/](https://github.com/clarkwang/sexpect/tree/master/examples) d
 [expect]:    https://www.nist.gov/services-resources/software/expect
 [expect.pm]: http://search.cpan.org/perldoc?Expect
 [pexpect]:   https://pexpect.readthedocs.io/
-[screen]: https://www.gnu.org/software/screen/
