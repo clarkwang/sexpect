@@ -924,7 +924,7 @@ serv_loop(void)
         }
 
         timeout.tv_sec = 0;
-        timeout.tv_usec = 100 * 1000;
+        timeout.tv_usec = 10 * 1000;
         /* FIXME: [??] On macOS, select returns -1 (EBADF) after pts is closed */
         r = select(fd_max + 1, & readfds, NULL, NULL, & timeout);
         if (r < 0) {
