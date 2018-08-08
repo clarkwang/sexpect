@@ -1,6 +1,6 @@
 
-#ifndef KMIP_H__
-#define KMIP_H__
+#ifndef PROTO_H__
+#define PROTO_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,9 +26,9 @@ typedef enum {
     PTYPE_INT    = 0x01, /* int32 */
     PTYPE_LONG   = 0x02, /* int64 */
     PTYPE_BOOL   = 0x03, /* int32 */
-    PTYPE_TEXT   = 0x04,
-    PTYPE_RAW    = 0x05,
-    PTYPE_STRUCT = 0x06,
+    PTYPE_TEXT   = 0x04, /* NULL terminated string */
+    PTYPE_RAW    = 0x05, /* raw bytes */
+    PTYPE_STRUCT = 0x06, /* struct */
 
     PTYPE_END__,
 } ptag_type_t;
