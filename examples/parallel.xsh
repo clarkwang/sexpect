@@ -3,10 +3,21 @@
 # Start multiple jobs in parallel and monitor each job's output until all done.
 #
 
+function whereami()
+{
+    local pathname=$1
+
+    if [[ $pathname != /* ]]; then
+        pathname=./$pathname
+    fi
+    cd "${pathname%/*}"
+    echo "$PWD"
+}
+
 njobs=3
 socks=()
 
-script=helper/5-odd-rand.sh
+script=$(whereami "$0")/helper/5-odd-rand.sh
 if [[ ! -f $script ]]; then
     echo "ERROR: \`$script' not found"
     exit 1
@@ -15,11 +26,13 @@ fi
 #
 # start jobs
 #
+echo "Starting $njobs instances of $script ..."
+sleep .5
 for ((i = 0; i < njobs; ++i)); do
     sock=/tmp/sexpect-parallel-example.sock.$i
     socks[i]=$sock
 
-    sexpect -s $sock sp bash $script
+    sexpect -s $sock sp -ttl 600 bash "$script"
 done
 
 #
