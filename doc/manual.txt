@@ -115,7 +115,10 @@ expect (exp, ex, x)
         Handle PATTERN as an 'exact' string.
 
     -glob PATTERN | -gl PATTERN
-        (NOT_IMPLEMENTED_YET)
+        Expect the GLOB style PATTERN.
+
+        For convenience, the GLOB patterns also support ^ and $ which match
+        the beginning and end of strings.
 
     -lookback N | -lb N
         Show the most recent last N lines of output so you'd know where you

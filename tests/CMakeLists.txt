@@ -24,6 +24,16 @@ add_executable(sleep sleep.c)
 add_executable(eof_before_exit eof_before_exit.c)
 add_executable(still_open_after_exit still_open_after_exit.c)
 
+#
+# glob2re
+#
+include_directories(${CMAKE_SOURCE_DIR})
+add_executable(glob2re glob2re.c ${CMAKE_SOURCE_DIR}/common.c ${CMAKE_SOURCE_DIR}/proto.c)
+add_test(
+    NAME glob2re
+    COMMAND ${CMAKE_BINARY_DIR}/tests/glob2re
+)
+
 foreach(t
         version
         spawn-ttl

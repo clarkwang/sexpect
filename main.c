@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.1.14";
+char * const VERSION_ = "2.1.15";
 
 static struct {
     char * progname;
@@ -148,7 +148,10 @@ expect (exp, ex, x)\n\
         Handle PATTERN as an 'exact' string.\n\
 \n\
     -glob PATTERN | -gl PATTERN\n\
-        (NOT_IMPLEMENTED_YET)\n\
+        Expect the GLOB style PATTERN.\n\
+\n\
+        For convenience, the GLOB patterns also support ^ and $ which match\n\
+        the beginning and end of strings.\n\
 \n\
     -lookback N | -lb N\n\
         Show the most recent last N lines of output so you'd know where you\n\
@@ -636,13 +639,15 @@ getargs(int argc, char **argv)
             /* expect */
         } else if (streq(g.cmdopts.cmd, "expect") ) {
             struct st_pass * st = & g.cmdopts.pass;
-            if (str1of(arg, "-exact", "-ex", "-re", NULL) ) {
+            if (str1of(arg, "-exact", "-ex", "-re", "-glob", "-gl", NULL) ) {
                 next = nextarg(argv, "-exact", & i);
                 st->pattern = next;
                 if (str1of(arg, "-exact", "-ex", NULL) ) {
                     st->expflags |= PASS_EXPECT_EXACT;
                 } else if (streq(arg, "-re") ) {
                     st->expflags |= PASS_EXPECT_ERE;
+                } else if (str1of(arg, "-glob", "-gl", NULL) ) {
+                    st->expflags |= PASS_EXPECT_GLOB;
                 }
             } else if (str1of(arg, "-nocase", "-icase", "-ic", "-i", NULL) ) {
                 st->expflags |= PASS_EXPECT_ICASE;
@@ -908,9 +913,10 @@ getargs(int argc, char **argv)
     /* expect */
     if (streq(g.cmdopts.cmd, "expect") ) {
         struct st_pass * st = & g.cmdopts.pass;
-        int flags = st->expflags & (PASS_EXPECT_EOF | PASS_EXPECT_EXACT | PASS_EXPECT_ERE);
+        int flags = st->expflags & (PASS_EXPECT_EOF | PASS_EXPECT_EXACT
+                                    | PASS_EXPECT_ERE | PASS_EXPECT_GLOB);
         if (count1bits(flags) > 1) {
-            fatal(ERROR_USAGE, "-eof, -exact and -re are exclusive");
+            fatal(ERROR_USAGE, "-eof, -exact, -glob and -re are exclusive");
         }
 
         if (st->pattern != NULL) {
@@ -928,6 +934,18 @@ getargs(int argc, char **argv)
             }
             if (strlen(st->pattern) ==  0) {
                 fatal(ERROR_USAGE, "pattern cannot be empty");
+            }
+            /* glob2re */
+            if ((st->expflags & PASS_EXPECT_GLOB) != 0) {
+                char * re_str = glob2re(st->pattern, & re_str, NULL);
+                if (re_str == NULL) {
+                    fatal(ERROR_USAGE, "invalid glob pattern: `%s'", st->pattern);
+                }
+
+                debug("glob2re: ``%s'' --> ``%s''", st->pattern, re_str);
+                st->pattern = re_str;
+                st->expflags &= ~PASS_EXPECT_GLOB;
+                st->expflags |= PASS_EXPECT_ERE;
             }
         }
 

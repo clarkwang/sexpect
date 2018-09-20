@@ -442,6 +442,177 @@ strunesc(const char * in, char ** out_, int * len_)
     return out;
 }
 
+/*
+ *    GLOB | RE
+ * --------+-------
+ *       * | .*
+ *       ? | .
+ *   [...] | [...]
+ *     []] | []]
+ *    [^]] | [^]]
+ *    [!]] | [^]]
+ *  [^...] | [^...]
+ *  [!...] | [^...]
+ *    ^... | ^...
+ *    ...^ | ...\^
+ *    $... | [$]...
+ *    ...$ | ...$
+ *     .|+ | [CHAR]
+ *  <>(){} | [CHAR]
+ *      \\ | \\
+ *      \* | [*]
+ *      \? | [?]
+ *      \[ | [[]
+ *      \] | []]
+ *         |
+ *       ] | ERROR
+ *  \OTHER | ERROR
+ */
+char *
+glob2re(const char * in, char ** out_, int * len_)
+{
+    int len, l;
+    char * out;
+    char c, * p = NULL;
+    const char * save_in = in;
+
+    * out_ = NULL;
+    if (len_ != NULL) {
+        * len_ = 0;
+    }
+
+    if (NULL == in) {
+        return NULL;
+    }
+
+    out = malloc(3 * strlen(in) + 1);
+    if (NULL == out) {
+        return NULL;
+    }
+
+    len = 0;
+    while (* in) {
+        c = in[0];
+
+        /* `*' */
+        if (c == '*') {
+            out[len++] = '.';
+            out[len++] = '*';
+
+            in += 1;
+
+            /* `?' */
+        } else if (c == '?') {
+            out[len++] = '.';
+
+            in += 1;
+
+            /* [...] */
+        } else if (c == '[') {
+            out[len++] = '[';
+            in += 1;
+
+            /* ! or ^ */
+            c = in[0];
+            if (c == 0) {
+                free(out);
+                return NULL;
+            } else if ( c == '!' || c == '^') {
+                out[len++] = '^';
+                in += 1;
+            }
+
+            /* the first char can be `]' */
+            c = in[0];
+            if (c == 0) {
+                free(out);
+                return NULL;
+            } else if (c == ']') {
+                out[len++] = ']';
+                in += 1;
+            }
+
+            /* find the next `]' */
+            p = strchr(in, ']');
+            if (p == NULL) {
+                free(out);
+                return NULL;
+            } else {
+                l = p + 1 - in;
+                memmove(out + len, in, l);
+                len += l;
+                in += l;
+            }
+
+            /* ] must be backslash-escaped so we don't have to deal with
+             * [:class:], [.collate.] and [=equiv=] */
+        } else if (c == ']') {
+            free(out);
+            return NULL;
+
+            /* ^ */
+        } else if (c == '^') {
+            if (in != save_in) {
+                out[len++] = '\\';
+            }
+            out[len++] = '^';
+
+            in += 1;
+
+            /* $ */
+        } else if (c == '$') {
+            if (in[1] != 0) {
+                out[len++] = '[';
+            }
+            out[len++] = '$';
+            if (in[1] != 0) {
+                out[len++] = ']';
+            }
+
+            in += 1;
+
+            /* . + < > ( ) { } | */
+        } else if (c == '.' || c == '+' || c == '|' || c == '<' || c == '>'
+                   || c == '(' || c == ')' || c == '{' || c == '}') {
+            out[len++] = '[';
+            out[len++] = c;
+            out[len++] = ']';
+
+            in += 1;
+
+            /* \CHAR */
+        } else if (c == '\\') {
+            if (in[1] == '\\') {
+                out[len++] = '\\';
+                in += 2;
+
+                /* \* \? \[ \] */
+            } else if (in[1] == '*' || in[1] == '?' || in[1] == '[' || in[1] == ']') {
+                out[len++] = '[';
+                out[len++] = in[1];
+                out[len++] = ']';
+                in += 2;
+
+                /* other \CHAR is not allowed */
+            } else {
+                free(out);
+                return NULL;
+            }
+        } else {
+            out[len++] = c;
+            in += 1;
+        }
+    }
+    out[len] = '\0';
+
+    * out_ = out;
+    if (len_ != NULL) {
+        * len_ = len;
+    }
+
+    return out;
+}
+
 #if 0
 ssize_t
 read_if_ready(int fd, char *buf, size_t n)
