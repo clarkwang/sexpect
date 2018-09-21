@@ -9,6 +9,8 @@ main()
 {
     char * pos_cases[] = {
         "",
+        "]",
+        "\\]",
         "^$",
         "^foo$",
         "^foo",
@@ -25,14 +27,15 @@ main()
     char * neg_cases[] = {
         "[",
         "[a-z",
-        "[a-z]]",
-        "]",
         "\\",
         "\\^",
         "\\x",
         "[[:digit:]]",
         "[[.cC.]]",
         "[[=o=]]",
+        "[x[:digit:]x]",
+        "[x[.cC.]x]",
+        "[x[=o=]x]",
     };
     char * fr = NULL, * to = NULL;
     int i;

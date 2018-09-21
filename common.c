@@ -443,35 +443,38 @@ strunesc(const char * in, char ** out_, int * len_)
 }
 
 /*
- *    GLOB | RE
- * --------+-------
- *       * | .*
- *       ? | .
- *   [...] | [...]
- *     []] | []]
- *    [^]] | [^]]
- *    [!]] | [^]]
- *  [^...] | [^...]
- *  [!...] | [^...]
- *    ^... | ^...
- *    ...^ | ...\^
- *    $... | [$]...
- *    ...$ | ...$
- *     .|+ | [CHAR]
- *  <>(){} | [CHAR]
- *      \\ | \\
- *      \* | [*]
- *      \? | [?]
- *      \[ | [[]
- *      \] | []]
- *         |
- *       ] | ERROR
- *  \OTHER | ERROR
+ *          GLOB | RE
+ * --------------+-------
+ *             * | .*
+ *             ? | .
+ *             ] | ]
+ *         [...] | [...]
+ *           []] | []]
+ *          [^]] | [^]]
+ *          [!]] | [^]]
+ *        [^...] | [^...]
+ *        [!...] | [^...]
+ *          ^... | ^...
+ *          ...^ | ...\^
+ *          $... | [$]...
+ *          ...$ | ...$
+ *           .|+ | [CHAR]
+ *        <>(){} | [CHAR]
+ *            \\ | \\
+ *            \* | [*]
+ *            \? | [?]
+ *            \[ | [[]
+ *            \] | []]
+ *               |
+ *        \OTHER | ERROR
+ *   [[:class:]] | ERROR
+ *  [[:collat:]] | ERROR
+ *   [[=equiv=]] | ERROR
  */
 char *
 glob2re(const char * in, char ** out_, int * len_)
 {
-    int len, l;
+    int len;
     char * out;
     char c, * p = NULL;
     const char * save_in = in;
@@ -507,6 +510,11 @@ glob2re(const char * in, char ** out_, int * len_)
 
             in += 1;
 
+            /* `]' */
+        } else if (c == ']') {
+            out[len++] = ']';
+            in += 1;
+
             /* [...] */
         } else if (c == '[') {
             out[len++] = '[';
@@ -538,17 +546,24 @@ glob2re(const char * in, char ** out_, int * len_)
                 free(out);
                 return NULL;
             } else {
-                l = p + 1 - in;
+                int i;
+                int l = p + 1 - in;
+
+                /* check if there's `[:', `[.' or `[=' */
+                for (i = 0; i < l - 1; ++i) {
+                    if (in[i] == '[') {
+                        char c2 = in[i + 1];
+                        if (c2 == ':' || c2 == '.' || c2 == '=') {
+                            free(out);
+                            return NULL;
+                        }
+                    }
+                }
+
                 memmove(out + len, in, l);
                 len += l;
                 in += l;
             }
-
-            /* ] must be backslash-escaped so we don't have to deal with
-             * [:class:], [.collate.] and [=equiv=] */
-        } else if (c == ']') {
-            free(out);
-            return NULL;
 
             /* ^ */
         } else if (c == '^') {
@@ -582,6 +597,7 @@ glob2re(const char * in, char ** out_, int * len_)
 
             /* \CHAR */
         } else if (c == '\\') {
+            /* \\ */
             if (in[1] == '\\') {
                 out[len++] = '\\';
                 in += 2;
