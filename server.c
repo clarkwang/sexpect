@@ -45,7 +45,9 @@ static struct {
 
     bool SIGCHLDed;
     bool waited;        /* client has called wait */
+#if 0
     int  lasterr;       /* last errno */
+#endif
 
     /* conn specific data, needs to be memset'ed for new conn */
     struct {
@@ -60,6 +62,15 @@ static struct {
             struct timespec startime;
         } pass;
     } conn;
+
+    /*
+     * This will be updated when
+     *  1) The server receives requests from client
+     *  2) The server receives data from the spawned process
+     *
+     * The initial value is the time when the process is spawned.
+     */
+    struct timespec lastactive;
 
     int64_t ntotal;     /* total # of bytes from ptm */
     int64_t rawoffset;  /* the offset (in `ntotal' bytes) of `rawbuf' */
@@ -120,8 +131,6 @@ static ptag_t *
 serv_new_error(int code, char * msg)
 {
     ptag_t * error;
-
-    g.lasterr = code;
 
     error = ptag_new_struct(PTAG_ERROR);
     ptag_append_child(error,
@@ -220,6 +229,8 @@ serv_process_msg(void)
     if (msg_in == NULL) {
         return;
     }
+
+    Clock_gettime( & g.lastactive);
 
     switch (msg_in->tag) {
 
@@ -380,6 +391,9 @@ serv_process_msg(void)
             if ( (t = ptag_find_child(msg_in, PTAG_TTL) ) != NULL) {
                 g.cmdopts->spawn.ttl = t->v_int;
             }
+            if ( (t = ptag_find_child(msg_in, PTAG_IDLETIME) ) != NULL) {
+                g.cmdopts->spawn.idle = t->v_int;
+            }
 
             msg_out = ptag_new_struct(PTAG_ACK);
             serv_msg_send(&msg_out, true);
@@ -400,6 +414,7 @@ serv_process_msg(void)
                 ptag_new_bool(PTAG_AUTOWAIT,   g.cmdopts->spawn.autowait),
                 ptag_new_bool(PTAG_DISCARD,    g.cmdopts->spawn.discard),
                 ptag_new_int(PTAG_TTL,         g.cmdopts->spawn.ttl),
+                ptag_new_int(PTAG_IDLETIME,    g.cmdopts->spawn.idle),
                 NULL);
             serv_msg_send( & msg_out, true);
 
@@ -431,6 +446,8 @@ serv_read_ptm(void)
         nread = read(g.fd_ptm, g.rawnew + g.newcnt,
                      g.rawbufsize - (g.newcnt + oldcnt) );
         if (nread > 0) {
+            Clock_gettime( & g.lastactive);
+
             break;
         }
 
@@ -633,20 +650,13 @@ serv_expect(void)
 static bool
 exp_timed_out(void)
 {
-    struct timespec nowspec;
-    double start, now;
-
     if (g.conn.pass.timeout < 0) {
         return false;
     } else if (g.conn.pass.timeout == 0) {
         return true;
     }
 
-    Clock_gettime(& nowspec);
-
-    start = g.conn.pass.startime.tv_sec + g.conn.pass.startime.tv_nsec / 1e9;
-    now = nowspec.tv_sec + nowspec.tv_nsec / 1e9;
-    if (fabs(now - start) > g.conn.pass.timeout) {
+    if (Clock_diff( & g.conn.pass.startime, NULL) > g.conn.pass.timeout) {
         return true;
     }
 
@@ -880,14 +890,17 @@ serv_loop(void)
 
         /* -ttl */
         if (spawn->ttl > 0 && g.conn.sock < 0) {
-            struct timespec nowspec;
-            double start, now;
+            if (Clock_diff( & spawn->startime, NULL) > spawn->ttl) {
+                debug("server has been alive for TTL (=%d) seconds, bye",
+                      spawn->ttl);
+                break;
+            }
+        }
 
-            Clock_gettime(& nowspec);
-            start = spawn->startime.tv_sec + spawn->startime.tv_nsec / 1e9;
-            now = nowspec.tv_sec + nowspec.tv_nsec / 1e9;
-            if (fabs(now - start) > spawn->ttl) {
-                debug("TTL expired, bye");
+        /* -idle */
+        if (spawn->idle > 0 && g.conn.sock < 0) {
+            if (Clock_diff( & g.lastactive, NULL) > spawn->idle) {
+                debug("server has been IDLE for %d seconds, bye", spawn->idle);
                 break;
             }
         }
@@ -954,7 +967,7 @@ serv_loop(void)
                 debug("new client connected");
                 memset( & g.conn, 0, sizeof(g.conn) );
                 g.conn.sock = newconn;
-                Clock_gettime(& g.conn.pass.startime);
+                Clock_gettime( & g.conn.pass.startime);
             }
         }
 
@@ -995,6 +1008,8 @@ static void
 serv_init(void)
 {
     g.conn.sock   = -1;
+
+    Clock_gettime( & g.lastactive);
 
     g.rawbufsize = SIZE_RAW_BUF;
     g.expbufsize = SIZE_RAW_BUF;
@@ -1157,7 +1172,7 @@ serv_main(struct st_cmdopts * cmdopts)
         chdir("/");
 
         g.child = pid;
-        Clock_gettime(& spawn->startime);
+        Clock_gettime( & spawn->startime);
     }
 
     /* set ptm to be non-blocking */

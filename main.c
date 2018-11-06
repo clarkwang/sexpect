@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.1.15";
+char * const VERSION_ = "2.1.16";
 
 static struct {
     char * progname;
@@ -100,7 +100,13 @@ spawn (sp)\n\
         Turn on 'discard' which by default is off. See sub-command 'set' for\n\
         more information.\n\
 \n\
-    -logfile FILE | -logf FILE\n\
+    -idle-close N | -idle N\n\
+        The background server process will close the PTY and exit if there are\n\
+        no client requests or output from the spawned process in the last N\n\
+        seconds. Usually this\n\
+        would cause the spawned process to receive SIGHUP and be killed.\n\
+\n\
+    -logfile FILE | -logf FILE | -log FILE\n\
         All output from the child process will be copied to the log file.\n\
         By default the log file will be overwritten. Use '-append' if you want\n\
         to append to it.\n\
@@ -364,6 +370,9 @@ set\n\
         When 'discard' is turned on, the output from the child will be silently\n\
         discarded so the child can continue running in without being blocked.\n\
 \n\
+    -idle-close N | -idle N\n\
+        Set the IDLE value. See 'spawn' for details.\n\
+\n\
     -timeout N | -t N\n\
         See 'spawn'.\n\
 \n\
@@ -388,6 +397,9 @@ get\n\
 \n\
     -discard\n\
         Get the 'discard' flag.\n\
+\n\
+    -idle-close | -idle\n\
+        Get the IDLE value. See 'spawn' for details.\n\
 \n\
     -pid\n\
         Get the child process's PID.\n\
@@ -715,6 +727,8 @@ getargs(int argc, char **argv)
                     g.cmdopts.get.get_autowait = true;
                 } else if (str1of(arg, "-ttl", NULL) ) {
                     g.cmdopts.get.get_ttl = true;
+                } else if (str1of(arg, "-idle-close", "-idle", NULL) ) {
+                    g.cmdopts.get.get_idle = true;
                 } else {
                     usage_err = true;
                     break;
@@ -849,6 +863,14 @@ getargs(int argc, char **argv)
                 if (st->ttl < 0) {
                     st->ttl = 0;
                 }
+            } else if (str1of(arg, "-idle-close", "-idle", NULL ) ) {
+                st->set_idle = true;
+                next = nextarg(argv, "-idle-close", & i);
+                st->idle = arg2int(next);
+
+                if (st->idle < 0) {
+                    st->idle = 0;
+                }
             } else {
                 usage_err = true;
                 break;
@@ -878,7 +900,12 @@ getargs(int argc, char **argv)
                 if (st->ttl < 0) {
                     st->ttl = 0;
                 }
-            } else if (str1of(arg, "-logfile", "-logf", NULL) ) {
+            } else if (str1of(arg, "-idle-close", "-idle", NULL) ) {
+                st->idle = arg2int(nextarg(argv, arg, & i) );
+                if (st->idle < 0) {
+                    st->idle = 0;
+                }
+            } else if (str1of(arg, "-logfile", "-logf", "-log", NULL) ) {
                 st->logfile = nextarg(argv, arg, & i);
             } else if (str1of(arg, "-append", NULL) ) {
                 st->append = true;

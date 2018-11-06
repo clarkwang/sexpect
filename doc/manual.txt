@@ -67,7 +67,13 @@ spawn (sp)
         Turn on 'discard' which by default is off. See sub-command 'set' for
         more information.
 
-    -logfile FILE | -logf FILE
+    -idle-close N | -idle N
+        The background server process will close the PTY and exit if there are
+        no client requests or output from the spawned process in the last N
+        seconds. Usually this
+        would cause the spawned process to receive SIGHUP and be killed.
+
+    -logfile FILE | -logf FILE | -log FILE
         All output from the child process will be copied to the log file.
         By default the log file will be overwritten. Use '-append' if you want
         to append to it.
@@ -331,6 +337,9 @@ set
         When 'discard' is turned on, the output from the child will be silently
         discarded so the child can continue running in without being blocked.
 
+    -idle-close N | -idle N
+        Set the IDLE value. See 'spawn' for details.
+
     -timeout N | -t N
         See 'spawn'.
 
@@ -355,6 +364,9 @@ get
 
     -discard
         Get the 'discard' flag.
+
+    -idle-close | -idle
+        Get the IDLE value. See 'spawn' for details.
 
     -pid
         Get the child process's PID.

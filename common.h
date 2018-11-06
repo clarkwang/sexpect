@@ -93,6 +93,7 @@ enum {
     PTAG_DISCARD,
     PTAG_AUTOWAIT,
     PTAG_TTL,
+    PTAG_IDLETIME,
     PTAG_LOGFILE,
     PTAG_LOGFILE_APPEND,
     PTAG_NOHUP,
@@ -138,6 +139,7 @@ struct st_spawn {
     int     logfd;
     bool    append;
     int     ttl;
+    int     idle;
     struct timespec startime;
 };
 
@@ -170,6 +172,8 @@ struct st_set {
     int  timeout;
     bool set_ttl;
     int  ttl;
+    bool set_idle;
+    int  idle;
 };
 
 struct st_get {
@@ -195,6 +199,9 @@ struct st_get {
 
     bool get_ttl;
     int  ttl;
+
+    bool get_idle;
+    int  idle;
 };
 
 struct st_kill {
@@ -245,6 +252,7 @@ int    name2sig(const char * signame);
 void   common_init(void);
 
 int  Clock_gettime(struct timespec * spec);
+double Clock_diff(struct timespec * t1, struct timespec * t2);
 int  count1bits(unsigned n);
 bool str1of(const char *s, ... /* , NULL */);
 bool strmatch(const char *s, const char *ere);

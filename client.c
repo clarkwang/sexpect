@@ -289,7 +289,11 @@ cli_loop(void)
                 }
                 if (get->get_all || get->get_ttl) {
                     t = ptag_find_child(msg_in, PTAG_TTL);
-                    printf("%s%d\n", get->get_all ? "       TTL: " : "", t->v_bool);
+                    printf("%s%d\n", get->get_all ? "       TTL: " : "", t->v_int);
+                }
+                if (get->get_all || get->get_idle) {
+                    t = ptag_find_child(msg_in, PTAG_IDLETIME);
+                    printf("%s%d\n", get->get_all ? "      IDLE: " : "", t->v_int);
                 }
                 if (get->get_all || get->get_timeout) {
                     t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT);
@@ -420,6 +424,11 @@ cli_main(struct st_cmdopts * cmdopts)
         if (cmdopts->set.set_ttl) {
             ptag_append_child(msg_out,
                 ptag_new_int(PTAG_TTL, cmdopts->set.ttl),
+                NULL);
+        }
+        if (cmdopts->set.set_idle) {
+            ptag_append_child(msg_out,
+                ptag_new_int(PTAG_IDLETIME, cmdopts->set.idle),
                 NULL);
         }
 

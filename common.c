@@ -8,6 +8,7 @@
 #include <regex.h>
 #include <signal.h>
 #include <ctype.h>
+#include <math.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -50,6 +51,7 @@ static struct v2n_map g_v2n_tag[] = {
     V2N_MAP(PTAG_EXP_FLAGS),
     V2N_MAP(PTAG_EXP_TIMEOUT),
     V2N_MAP(PTAG_HELLO),
+    V2N_MAP(PTAG_IDLETIME),
     V2N_MAP(PTAG_INFO),
     V2N_MAP(PTAG_INPUT),
     V2N_MAP(PTAG_KILL),
@@ -253,6 +255,26 @@ Clock_gettime(struct timespec * spec)
     }
 
     return clock_gettime(clock, spec);
+}
+
+/*
+ * t2 can be NULL which means NOW.
+ */
+double
+Clock_diff(struct timespec * t1, struct timespec * t2)
+{
+    struct timespec nowspec;
+    double d1, d2;
+
+    if (NULL == t2) {
+        Clock_gettime(& nowspec);
+        t2 = & nowspec;
+    }
+
+    d1 = t1->tv_sec + t1->tv_nsec / 1e9;
+    d2 = t2->tv_sec + t2->tv_nsec / 1e9;
+
+    return fabs(d2 - d1);
 }
 
 bool
