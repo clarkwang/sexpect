@@ -7,7 +7,7 @@ all: sexpect
 ${objs}: ${h_files}
 
 sexpect: ${objs}
-	$(CC) -o $@ ${objs}
+	$(CC) -o $@ ${objs} -lrt
 
 clean:
 	rm -f ${objs} sexpect
