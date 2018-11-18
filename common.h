@@ -21,7 +21,7 @@
 #define PASS_MAGIC      0x4a55575a /* JUWZ */
 #define PASS_MAX_MSG    (16 * 1024)
 #define PASS_MAX_SEND   1024
-#define PASS_DEF_TMOUT  10
+#define PASS_DEF_TMOUT  -1
 
 enum {
     /* THE START */

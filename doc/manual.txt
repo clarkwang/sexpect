@@ -85,8 +85,8 @@ spawn (sp)
         Set the env var TERM for the child process.
 
     -timeout N | -t N
-        Set the default timeout for the 'expect' command.
-        The default value is 10 seconds. A negative value means no timeout.
+        Set the default timeout for the 'expect' command. A negative value means
+        no timeout. The default value is -1.
 
     -ttl N
         The background server process will close the PTY and exit N seconds

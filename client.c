@@ -293,7 +293,7 @@ cli_loop(void)
                 }
                 if (get->get_all || get->get_idle) {
                     t = ptag_find_child(msg_in, PTAG_IDLETIME);
-                    printf("%s%d\n", get->get_all ? "      IDLE: " : "", t->v_int);
+                    printf("%s%d\n", get->get_all ? "      Idle: " : "", t->v_int);
                 }
                 if (get->get_all || get->get_timeout) {
                     t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT);

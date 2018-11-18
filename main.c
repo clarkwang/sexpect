@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.1.16";
+char * const VERSION_ = "2.1.17";
 
 static struct {
     char * progname;
@@ -118,8 +118,8 @@ spawn (sp)\n\
         Set the env var TERM for the child process.\n\
 \n\
     -timeout N | -t N\n\
-        Set the default timeout for the 'expect' command.\n\
-        The default value is 10 seconds. A negative value means no timeout.\n\
+        Set the default timeout for the 'expect' command. A negative value means\n\
+        no timeout. The default value is -1.\n\
 \n\
     -ttl N\n\
         The background server process will close the PTY and exit N seconds\n\
@@ -895,6 +895,9 @@ getargs(int argc, char **argv)
                 st->TERM = next;
             } else if (str1of(arg, "-timeout", "-t", NULL) ) {
                 st->def_timeout = arg2int(nextarg(argv, arg, & i) );
+                if (st->def_timeout < 0) {
+                    st->def_timeout = -1;
+                }
             } else if (str1of(arg, "-ttl", NULL) ) {
                 st->ttl = arg2int(nextarg(argv, arg, & i) );
                 if (st->ttl < 0) {
