@@ -7,7 +7,7 @@
 source $SRCDIR/tests/common.sh || exit 1
 
 export PS1='\s-\v\$ '
-assert_run sexpect sp -ttl 20 bash --norc
+assert_run sexpect sp -t 10 -ttl 20 bash --norc
 assert_run sexpect s -cr exit
 assert_run sexpect ex -t 1 bash
 assert_run sexpect ex -t 1 exit

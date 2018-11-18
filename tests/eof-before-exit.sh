@@ -7,7 +7,7 @@ source $SRCDIR/tests/common.sh || exit 1
 
 nsleep=5
 nexit=7
-assert_run sexpect sp -ttl 30 ./eof_before_exit $nsleep $nexit
+assert_run sexpect sp -t 10 -ttl 30 ./eof_before_exit $nsleep $nexit
     # We get EOF but the child's still running.
 assert_run sexpect ex -t 2 -eof
 assert_run sexpect ex -t 0 -eof

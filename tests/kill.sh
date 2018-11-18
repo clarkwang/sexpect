@@ -5,7 +5,7 @@ source $SRCDIR/tests/common.sh || exit 1
 #----------------------------------------------------------------------------#
 
 for arg in '' -TERM -SIGTERM -term -sigterm -15; do
-    assert_run sexpect sp -ttl 20 bash -c 'echo hello; sleep 60'
+    assert_run sexpect sp -t 10 -ttl 20 bash -c 'echo hello; sleep 60'
     assert_run sexpect ex hello
     assert_run sexpect k $arg
     assert_run sexpect ex -t 1 -eof

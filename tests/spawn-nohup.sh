@@ -5,7 +5,7 @@ source $SRCDIR/tests/common.sh || exit 1
 #
 # without `-nohup'
 #
-assert_run sexpect sp -ttl 20 sleep 300
+assert_run sexpect sp -t 10 -ttl 20 sleep 300
 run sleep 1
 assert_run sexpect c
 assert_run sexpect ex -t 1 -eof
@@ -19,7 +19,7 @@ run sleep 1
 #
 # with `-nohup'
 #
-assert_run sexpect sp -ttl 20 -nohup sleep 300
+assert_run sexpect sp -t 10 -ttl 20 -nohup sleep 300
 run sleep 1
 assert_run sexpect c
 # pty closed so we'd get EOF

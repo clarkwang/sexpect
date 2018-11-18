@@ -3,7 +3,7 @@
 source $SRCDIR/tests/common.sh || exit 1
 
 export PS1='\s-\v\$ '
-assert_run sexpect sp -ttl 20 bash --norc
+assert_run sexpect sp -t 10 -ttl 20 bash --norc
 
 re_ps1='bash-[.0-9]+[$#] $'
 assert_run sexpect ex -re "$re_ps1"

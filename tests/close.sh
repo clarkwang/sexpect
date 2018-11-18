@@ -4,7 +4,7 @@ source $SRCDIR/tests/common.sh || exit 1
 
 #----------------------------------------------------------------------------#
 
-assert_run sexpect sp sleep 60
+assert_run sexpect sp -t 10 sleep 60
 assert_run sexpect c
 assert_run sexpect c
 assert_run sexpect c

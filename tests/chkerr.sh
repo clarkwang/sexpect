@@ -2,7 +2,7 @@
 
 source $SRCDIR/tests/common.sh || exit 1
 
-assert_run sexpect sp -ttl 20 sleep 3
+assert_run sexpect sp -t 10 -ttl 20 sleep 3
 run sexpect ex -t 1 not-found
 ret=$?
 assert_run sexpect ck -err $ret -is timeout

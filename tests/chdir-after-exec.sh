@@ -16,7 +16,7 @@ tmpfile=chdir-after-exec.tmp.xYcyTm
 negass_run ls -l $tmpfile
 assert_run touch $tmpfile
 
-assert_run sexpect sp -ttl 20 bash -c "sleep 1; ls -l chdir*.tmp.*; rm -f chdir*.tmp.*"
+assert_run sexpect sp -t 10 -ttl 20 bash -c "sleep 1; ls -l chdir*.tmp.*; rm -f chdir*.tmp.*"
 assert_run sexpect ex $tmpfile
 assert_run sexpect ex -eof
 assert_run sexpect w

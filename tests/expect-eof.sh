@@ -5,7 +5,7 @@ source $SRCDIR/tests/common.sh || exit 1
 #----------------------------------------------------------------------------#
 
 export PS1='\s-\v\$ '
-assert_run sexpect sp -ttl 20 bash --norc
+assert_run sexpect sp -t 10 -ttl 20 bash --norc
 
 # `expect -eof' returns TIMEOUT if not EOF
 run sexpect ex -t 1 -eof
@@ -37,7 +37,7 @@ assert "[[ $ret == 127 ]]"
 #----------------------------------------------------------------------------#
 
 run sleep 1
-assert_run sexpect sp -ttl 20 bash --norc
+assert_run sexpect sp -t 10 -ttl 20 bash --norc
 assert_run sexpect s -c 'exit\r'
 run sleep 1
 # `expect' w/o a pattern defaults to `-re ".*" '

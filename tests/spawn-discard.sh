@@ -2,7 +2,7 @@
 
 source $SRCDIR/tests/common.sh || exit 1
 
-assert_run sexpect sp -discard -ttl 20 bash -c 'echo aaa; sleep 5; echo bbb; sleep 2'
+assert_run sexpect sp -t 10 -discard -ttl 20 bash -c 'echo aaa; sleep 5; echo bbb; sleep 2'
 run sleep 1
 
 # `aaa' is discarded so `expect' would not see it.

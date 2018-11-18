@@ -14,7 +14,7 @@ source $SRCDIR/tests/common.sh || exit 1
 tmpfile=chdir-after-logfile.vJv0TT.log
 negass_run ls -l $tmpfile
 
-assert_run sexpect sp -logf $tmpfile -ttl 30 ls -l /
+assert_run sexpect sp -t 10 -logf $tmpfile -ttl 30 ls -l /
 assert_run sexpect ex -eof
 assert_run sexpect w
 assert_run ls -l $tmpfile
