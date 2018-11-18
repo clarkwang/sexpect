@@ -19,7 +19,7 @@ passwd=$2; shift 2
 export SEXPECT_SOCKFILE=/tmp/sexpect-ssh-$$.sock
 trap '{ sexpect c && sexpect w; } >& /dev/null' EXIT
 
-sexpect spawn \
+sexpect spawn -t 10 \
     ssh -o PreferredAuthentications=keyboard-interactive,password \
         -o NumberOfPasswordPrompts=1 \
         -o ControlPath=none \

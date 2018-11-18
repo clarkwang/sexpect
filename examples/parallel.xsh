@@ -32,7 +32,7 @@ for ((i = 0; i < njobs; ++i)); do
     sock=/tmp/sexpect-parallel-example.sock.$i
     socks[i]=$sock
 
-    sexpect -s $sock sp -ttl 600 bash "$script"
+    sexpect -s $sock sp -t 10 -ttl 600 bash "$script"
 done
 
 #
