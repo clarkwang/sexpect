@@ -37,7 +37,7 @@ USAGE:\n\
 \n\
 DESCRIPTION:\n\
 \n\
-  Yet Another Expect ('s' is for either simple or super)\n\
+  Yet Another Expect ('s' is for either simple, super or shell)\n\
 \n\
   Unlike Expect (Tcl), Expect.pm (Perl), Pexpect (Python) or other similar\n\
   Expect implementations, 'sexpect' is not bound to any specific programming\n\
@@ -103,8 +103,8 @@ spawn (sp)\n\
     -idle-close N | -idle N\n\
         The background server process will close the PTY and exit if there are\n\
         no client requests or output from the spawned process in the last N\n\
-        seconds. Usually this\n\
-        would cause the spawned process to receive SIGHUP and be killed.\n\
+        seconds. Usually this would cause the spawned process to receive SIGHUP\n\
+        and be killed.\n\
 \n\
     -logfile FILE | -logf FILE | -log FILE\n\
         All output from the child process will be copied to the log file.\n\
@@ -144,8 +144,8 @@ expect (exp, ex, x)\n\
 \n\
   OPTIONS\n\
     -cstring | -cstr | -c\n\
-        C style backslash escapes would be recognized and replaced in STRING\n\
-        or PATTERN. See 'send' for more information.\n\
+        C style backslash escapes would be recognized and replaced in PATTERN.\n\
+        See 'send' for more information.\n\
 \n\
     -eof\n\
         Wait until EOF from the child process.\n\
@@ -234,7 +234,7 @@ interact (i)\n\
     'interact' is used to attach to the child process and manually interact\n\
     with it. To detach from the child, press CTRL-] .\n\
 \n\
-    `interact' would fail if it's not running on a tty/pty.\n\
+    'interact' would fail if it's not running on a tty/pty.\n\
 \n\
     If the child process exits when you're interacting with it then 'interact'\n\
     will exit with the same exit code of the child process and you don't need\n\
@@ -368,7 +368,7 @@ set\n\
         the output in time.\n\
 \n\
         When 'discard' is turned on, the output from the child will be silently\n\
-        discarded so the child can continue running in without being blocked.\n\
+        discarded so the child can continue running without being blocked.\n\
 \n\
     -idle-close N | -idle N\n\
         Set the IDLE value. See 'spawn' for details.\n\

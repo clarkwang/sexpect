@@ -19,7 +19,7 @@
 #define c_O3(c1, c2, c3)  ( (c_O2(c1, c2) << 3) + c_O1(c3) )
 
 #define PASS_MAGIC      0x4a55575a /* JUWZ */
-#define PASS_MAX_MSG    (16 * 1024)
+#define PASS_MAX_MSG    (64 * 1024)
 #define PASS_MAX_SEND   1024
 #define PASS_DEF_TMOUT  -1
 

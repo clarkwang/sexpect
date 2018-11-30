@@ -622,6 +622,7 @@ glob2re(const char * in, char ** out_, int * len_)
             /* \\ */
             if (in[1] == '\\') {
                 out[len++] = '\\';
+                out[len++] = '\\';
                 in += 2;
 
                 /* \* \? \[ \] */
@@ -839,11 +840,19 @@ msg_free(ptag_t **msg)
 ptag_t *
 msg_recv(int fd)
 {
-    unsigned char buf[PASS_MAX_MSG];
+    const int bufsize = PASS_MAX_MSG;
+    static unsigned char * buf = NULL;
     uint32_t taglen; /* not including the header */
     uint32_t magic;
     int ret;
     ptag_t * msg = NULL;
+
+    if (buf == NULL) {
+        buf = malloc(bufsize);
+        if (buf == NULL) {
+            fatal_sys("malloc(%d) returned NULL", bufsize);
+        }
+    }
 
     /* the magic number */
     ret = readn(fd, & magic, 4);
@@ -864,8 +873,9 @@ msg_recv(int fd)
     }
 
     taglen = ROUND8(net_get32(buf + PTAG_HDR_LEN_OFFSET) );
-    if (taglen + PTAG_HDR_SIZE > sizeof(buf)) {
-        error("message too big: %u > %zu", taglen + PTAG_HDR_SIZE, sizeof(buf));
+    if (taglen + PTAG_HDR_SIZE > bufsize) {
+        error("message too big: %u > %d",
+              taglen + PTAG_HDR_SIZE, bufsize);
         return NULL;
     }
 
@@ -893,17 +903,26 @@ msg_recv(int fd)
 ssize_t
 msg_send(int fd, ptag_t *msg)
 {
-    unsigned char buf[PASS_MAX_MSG];
+    const int bufsize = PASS_MAX_MSG;
+    static unsigned char * buf = NULL;
     uint32_t magic;
     int ret, size;
 
+    if (buf == NULL) {
+        buf = malloc(bufsize);
+        if (buf == NULL) {
+            fatal_sys("malloc(%d) returned NULL", bufsize);
+            return -1;
+        }
+    }
+
     size = ptag_calc_size(msg);
-    if (size > PASS_MAX_MSG) {
+    if (size > bufsize) {
         error("message too large (%d bytes)", size);
         return -1;
     }
 
-    ret = ptag_encode(msg, buf, sizeof(buf) );
+    ret = ptag_encode(msg, buf, bufsize);
     if (size != ret) {
         error("message is %d bytes but only encoded %d", size, ret);
         return -1;

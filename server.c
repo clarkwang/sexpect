@@ -25,8 +25,8 @@
 #include "proto.h"
 #include "pty.h"
 
-#define SIZE_RAW_BUF    (8 * 1024)
-#define MAX_OLD_DATA    (4 * 1024)
+#define SIZE_RAW_BUF    (16 * 1024)
+#define MAX_OLD_DATA    ( 8 * 1024)
 
 #if (SIZE_RAW_BUF + 1024) > PASS_MAX_MSG
 #error "SIZE_RAW_BUF too large compared to PASS_MAX_MSG"
@@ -1152,6 +1152,9 @@ serv_main(struct st_cmdopts * cmdopts)
                 fatal_sys("setenv(TERM)");
             }
         }
+
+        /* don't pass SEXPECT_SOCKFILE to the spawned process */
+        unsetenv("SEXPECT_SOCKFILE");
 
         /* set pty winsize if we are on a tty */
         if (ontty) {

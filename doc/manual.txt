@@ -4,7 +4,7 @@ USAGE:
 
 DESCRIPTION:
 
-  Yet Another Expect ('s' is for either simple or super)
+  Yet Another Expect ('s' is for either simple, super or shell)
 
   Unlike Expect (Tcl), Expect.pm (Perl), Pexpect (Python) or other similar
   Expect implementations, 'sexpect' is not bound to any specific programming
@@ -70,8 +70,8 @@ spawn (sp)
     -idle-close N | -idle N
         The background server process will close the PTY and exit if there are
         no client requests or output from the spawned process in the last N
-        seconds. Usually this
-        would cause the spawned process to receive SIGHUP and be killed.
+        seconds. Usually this would cause the spawned process to receive SIGHUP
+        and be killed.
 
     -logfile FILE | -logf FILE | -log FILE
         All output from the child process will be copied to the log file.
@@ -111,8 +111,8 @@ expect (exp, ex, x)
 
   OPTIONS
     -cstring | -cstr | -c
-        C style backslash escapes would be recognized and replaced in STRING
-        or PATTERN. See 'send' for more information.
+        C style backslash escapes would be recognized and replaced in PATTERN.
+        See 'send' for more information.
 
     -eof
         Wait until EOF from the child process.
@@ -201,7 +201,7 @@ interact (i)
     'interact' is used to attach to the child process and manually interact
     with it. To detach from the child, press CTRL-] .
 
-    `interact' would fail if it's not running on a tty/pty.
+    'interact' would fail if it's not running on a tty/pty.
 
     If the child process exits when you're interacting with it then 'interact'
     will exit with the same exit code of the child process and you don't need
@@ -335,7 +335,7 @@ set
         the output in time.
 
         When 'discard' is turned on, the output from the child will be silently
-        discarded so the child can continue running in without being blocked.
+        discarded so the child can continue running without being blocked.
 
     -idle-close N | -idle N
         Set the IDLE value. See 'spawn' for details.
