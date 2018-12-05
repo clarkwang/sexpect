@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.1.17";
+char * const VERSION_ = "2.1.18";
 
 static struct {
     char * progname;
@@ -538,12 +538,12 @@ getargs(int argc, char **argv)
         arg = argv[i];
         if (g.cmdopts.cmd == NULL) {
             /* -help */
-            if (str1of(arg, "-h", "-help", "--help", "help", NULL) ) {
+            if (str1of(arg, "-h", "-help", "--help", "help", "h", NULL) ) {
                 g.cmdopts.cmd = "help";
 
                 /* -version */
-            } else if (str1of(arg, "-version", "--version", "-ver",
-                              "version", "ver", NULL) ) {
+            } else if (str1of(arg, "-version", "--version",
+                              "version", "ver", "v", NULL) ) {
                 g.cmdopts.cmd = "version";
 
                 /* -debug */
@@ -927,8 +927,13 @@ getargs(int argc, char **argv)
 
             /* wait */
         } else if (streq(g.cmdopts.cmd, "wait") ) {
-            usage_err = true;
-            break;
+            if (str1of(arg, "-lookback", "-lb", NULL) ) {
+                next = nextarg(argv, "-lookback", & i);
+                g.cmdopts.pass.lookback = arg2uint(next);
+            } else {
+                usage_err = true;
+                break;
+            }
         }
     }
     if (usage_err) {
