@@ -17,10 +17,14 @@ running in background. You can *attach* to and *detach* from it as needed.
 ## The *Make* Way
 
     $ make
+    $ cp ./sexpect /usr/bin/
+    $ /usr/bin/sexpect -help
 
 ## The [*CMake*](https://cmake.org/) Way
 
     $ mkdir build; cd build; cmake ..; make
+    $ cp ./sexpect /usr/bin/
+    $ /usr/bin/sexpect -help
     
 ## Supported platforms                                                                
                                                                                       
