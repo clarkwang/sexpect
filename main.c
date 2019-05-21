@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.1.18";
+char * const VERSION_ = "2.1.19";
 
 static struct {
     char * progname;
@@ -102,9 +102,8 @@ spawn (sp)\n\
 \n\
     -idle-close N | -idle N\n\
         The background server process will close the PTY and exit if there are\n\
-        no client requests or output from the spawned process in the last N\n\
-        seconds. Usually this would cause the spawned process to receive SIGHUP\n\
-        and be killed.\n\
+        no client requests in the last N seconds. Usually this would cause the\n\
+        spawned process to receive SIGHUP and be killed.\n\
 \n\
     -logfile FILE | -logf FILE | -log FILE\n\
         All output from the child process will be copied to the log file.\n\

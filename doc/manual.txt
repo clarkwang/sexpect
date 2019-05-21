@@ -69,9 +69,8 @@ spawn (sp)
 
     -idle-close N | -idle N
         The background server process will close the PTY and exit if there are
-        no client requests or output from the spawned process in the last N
-        seconds. Usually this would cause the spawned process to receive SIGHUP
-        and be killed.
+        no client requests in the last N seconds. Usually this would cause the
+        spawned process to receive SIGHUP and be killed.
 
     -logfile FILE | -logf FILE | -log FILE
         All output from the child process will be copied to the log file.

@@ -225,12 +225,17 @@ serv_process_msg(void)
     ptag_t * msg_in = NULL;
     ptag_t * msg_out = NULL;
 
+    /* This _must_ be called before serv_msg_recv(), otherwise, for example, a
+     * killed `sexpect expect -t N' would not update `g.lastactive'.
+     *
+     * Or this can be moved into `serv_msg_recv()'.
+     */
+    Clock_gettime( & g.lastactive);
+
     msg_in = serv_msg_recv();
     if (msg_in == NULL) {
         return;
     }
-
-    Clock_gettime( & g.lastactive);
 
     switch (msg_in->tag) {
 
@@ -446,8 +451,12 @@ serv_read_ptm(void)
         nread = read(g.fd_ptm, g.rawnew + g.newcnt,
                      g.rawbufsize - (g.newcnt + oldcnt) );
         if (nread > 0) {
+            /*
+             * It turned out this behavior is _not_ quite useful.
+             */
+#if 0
             Clock_gettime( & g.lastactive);
-
+#endif
             break;
         }
 
