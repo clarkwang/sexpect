@@ -1008,8 +1008,9 @@ serv_loop(void)
         /* expect/interact/wait */
         if (g.conn.sock >= 0 && g.conn.passing) {
             serv_pass();
-            drop_old_data();
         }
+
+        drop_old_data();
     }
 }
 
