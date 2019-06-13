@@ -303,9 +303,9 @@ cli_loop(void)
                     t = ptag_find_child(msg_in, PTAG_AUTOWAIT);
                     printf("%s%d\n", get->get_all ? "  Autowait: " : "", t->v_bool);
                 }
-                if (get->get_all || get->get_discard) {
-                    t = ptag_find_child(msg_in, PTAG_DISCARD);
-                    printf("%s%d\n", get->get_all ? "   Discard: " : "", t->v_bool);
+                if (get->get_all || get->get_nonblock) {
+                    t = ptag_find_child(msg_in, PTAG_NONBLOCK);
+                    printf("%s%d\n", get->get_all ? "  Nonblock: " : "", t->v_bool);
                 }
                 cli_disconn(0);
             } else if (msg_in->tag == PTAG_EXITED) {
@@ -411,9 +411,9 @@ cli_main(struct st_cmdopts * cmdopts)
                 ptag_new_bool(PTAG_AUTOWAIT, cmdopts->set.autowait),
                 NULL);
         }
-        if (cmdopts->set.set_discard) {
+        if (cmdopts->set.set_nonblock) {
             ptag_append_child(msg_out,
-                ptag_new_bool(PTAG_DISCARD, cmdopts->set.discard),
+                ptag_new_bool(PTAG_NONBLOCK, cmdopts->set.nonblock),
                 NULL);
         }
         if (cmdopts->set.set_timeout) {

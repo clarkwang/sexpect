@@ -63,8 +63,8 @@ spawn (sp)
         Close the pty after the child process has exited even if the child's
         child processes are still opening the pty. (Example: 'ssh -f')
 
-    -discard
-        Turn on 'discard' which by default is off. See sub-command 'set' for
+    -nonblock | -nb
+        Turn on 'nonblock' which by default is off. See sub-command 'set' for
         more information.
 
     -idle-close N | -idle N
@@ -326,15 +326,15 @@ set
         When 'autowait' is turned on, after the child process exits it'll
         be automatically waited and then the server will exit.
 
-    -discard FLAG
+    -nonblock FLAG | -nb FLAG
         FLAG can be 0, 1, on, off.
 
         By default, the child process will be blocked if it outputs too much
         and the client (either 'expect', 'interact' or 'wait') does not read
         the output in time.
 
-        When 'discard' is turned on, the output from the child will be silently
-        discarded so the child can continue running without being blocked.
+        When 'nonblock' is turned on, the output from the child will not be
+        blocked so the child can continue running.
 
     -idle-close N | -idle N
         Set the IDLE value. See 'spawn' for details.
@@ -361,8 +361,8 @@ get
     -autowait | -nowait
         Get the 'autowait' flag.
 
-    -discard
-        Get the 'discard' flag.
+    -nonblock | -nb
+        Get the 'nonblock' flag.
 
     -idle-close | -idle
         Get the IDLE value. See 'spawn' for details.

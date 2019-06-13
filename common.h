@@ -90,7 +90,7 @@ enum {
     PTAG_PPID,
     PTAG_PTSNAME,
     PTAG_EXPOUT_INDEX,
-    PTAG_DISCARD,
+    PTAG_NONBLOCK,
     PTAG_AUTOWAIT,
     PTAG_TTL,
     PTAG_IDLETIME,
@@ -130,7 +130,7 @@ struct st_spawn {
     char ** argv;
     char  * TERM;
     bool    nohup;
-    bool    discard;
+    bool    nonblock;
     bool    autowait;
     bool    cloexit;    /* Close ptm when the child exits even the child's
                            children are still opening the pty */
@@ -166,8 +166,8 @@ struct st_chkerr {
 struct st_set {
     bool set_autowait;
     bool autowait;
-    bool set_discard;
-    bool discard;
+    bool set_nonblock;
+    bool nonblock;
     bool set_timeout;
     int  timeout;
     bool set_ttl;
@@ -191,8 +191,8 @@ struct st_get {
     bool get_timeout;
     int  timeout;
 
-    bool get_discard;
-    bool discard;
+    bool get_nonblock;
+    bool nonblock;
 
     bool get_autowait;
     bool autowait;

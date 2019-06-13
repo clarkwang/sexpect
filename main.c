@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.2.0";
+char * const VERSION_ = "2.2.1";
 
 static struct {
     char * progname;
@@ -96,8 +96,8 @@ spawn (sp)\n\
         Close the pty after the child process has exited even if the child's\n\
         child processes are still opening the pty. (Example: 'ssh -f')\n\
 \n\
-    -discard\n\
-        Turn on 'discard' which by default is off. See sub-command 'set' for\n\
+    -nonblock | -nb\n\
+        Turn on 'nonblock' which by default is off. See sub-command 'set' for\n\
         more information.\n\
 \n\
     -idle-close N | -idle N\n\
@@ -359,15 +359,15 @@ set\n\
         When 'autowait' is turned on, after the child process exits it'll\n\
         be automatically waited and then the server will exit.\n\
 \n\
-    -discard FLAG\n\
+    -nonblock FLAG | -nb FLAG\n\
         FLAG can be 0, 1, on, off.\n\
 \n\
         By default, the child process will be blocked if it outputs too much\n\
         and the client (either 'expect', 'interact' or 'wait') does not read\n\
         the output in time.\n\
 \n\
-        When 'discard' is turned on, the output from the child will be silently\n\
-        discarded so the child can continue running without being blocked.\n\
+        When 'nonblock' is turned on, the output from the child will not be\n\
+        blocked so the child can continue running.\n\
 \n\
     -idle-close N | -idle N\n\
         Set the IDLE value. See 'spawn' for details.\n\
@@ -394,8 +394,8 @@ get\n\
     -autowait | -nowait\n\
         Get the 'autowait' flag.\n\
 \n\
-    -discard\n\
-        Get the 'discard' flag.\n\
+    -nonblock | -nb\n\
+        Get the 'nonblock' flag.\n\
 \n\
     -idle-close | -idle\n\
         Get the IDLE value. See 'spawn' for details.\n\
@@ -720,8 +720,10 @@ getargs(int argc, char **argv)
                     g.cmdopts.get.get_tty = true;
                 } else if (str1of(arg, "-timeout", "-t", NULL) ) {
                     g.cmdopts.get.get_timeout = true;
-                } else if (str1of(arg, "-discard", NULL) ) {
-                    g.cmdopts.get.get_discard = true;
+
+                    /* still supports `-discard' for backward compat */
+                } else if (str1of(arg, "-nonblock", "-nb", "-discard", NULL) ) {
+                    g.cmdopts.get.get_nonblock = true;
                 } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                     g.cmdopts.get.get_autowait = true;
                 } else if (str1of(arg, "-ttl", NULL) ) {
@@ -833,14 +835,16 @@ getargs(int argc, char **argv)
                     usage_err = true;
                     break;
                 }
-            } else if (str1of(arg, "-discard", NULL ) ) {
-                st->set_discard = true;
 
-                next = nextarg(argv, "-discard", & i);
+                /* still supports `-discard' for backward compat */
+            } else if (str1of(arg, "-nonblock", "-nb", "-discard", NULL ) ) {
+                st->set_nonblock = true;
+
+                next = nextarg(argv, "-nonblock", & i);
                 if (str_true(next) ) {
-                    st->discard = true;
+                    st->nonblock = true;
                 } else if (str_false(next) ) {
-                    st->discard = false;
+                    st->nonblock = false;
                 } else {
                     arg = next;
                     usage_err = true;
@@ -882,8 +886,10 @@ getargs(int argc, char **argv)
                 st->nohup = true;
             } else if (str1of(arg, "-autowait", "-nowait", "-now", NULL) ) {
                 st->autowait = true;
-            } else if (str1of(arg, "-discard", NULL) ) {
-                st->discard = true;
+
+                /* still supports `-discard' for backward compat */
+            } else if (str1of(arg, "-nonblock", "-nb", "-discard", NULL) ) {
+                st->nonblock = true;
             } else if (str1of(arg, "-close-on-exit", "-cloexit", NULL) ) {
                 st->cloexit = true;
             } else if (str1of(arg, "-term", "-T", NULL) ) {

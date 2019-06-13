@@ -387,8 +387,8 @@ serv_process_msg(void)
             if ( (t = ptag_find_child(msg_in, PTAG_AUTOWAIT) ) != NULL) {
                 g.cmdopts->spawn.autowait = t->v_bool;
             }
-            if ( (t = ptag_find_child(msg_in, PTAG_DISCARD) ) != NULL) {
-                g.cmdopts->spawn.discard = t->v_bool;
+            if ( (t = ptag_find_child(msg_in, PTAG_NONBLOCK) ) != NULL) {
+                g.cmdopts->spawn.nonblock = t->v_bool;
             }
             if ( (t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT) ) != NULL) {
                 g.cmdopts->spawn.def_timeout = t->v_int;
@@ -417,7 +417,7 @@ serv_process_msg(void)
                 ptag_new_text(PTAG_PTSNAME, strlen(g.ptsname), g.ptsname),
                 ptag_new_int(PTAG_EXP_TIMEOUT, g.cmdopts->spawn.def_timeout),
                 ptag_new_bool(PTAG_AUTOWAIT,   g.cmdopts->spawn.autowait),
-                ptag_new_bool(PTAG_DISCARD,    g.cmdopts->spawn.discard),
+                ptag_new_bool(PTAG_NONBLOCK,   g.cmdopts->spawn.nonblock),
                 ptag_new_int(PTAG_TTL,         g.cmdopts->spawn.ttl),
                 ptag_new_int(PTAG_IDLETIME,    g.cmdopts->spawn.idle),
                 NULL);
@@ -986,18 +986,21 @@ serv_loop(void)
                 serv_read_ptm();
             }
         }
-        /* -discard is ON */
-        if (spawn->discard && g.conn.sock < 0) {
-            /* mark "new" data as "old" when -discard is ON */
+        /* -nonblock is ON */
+        if (spawn->nonblock && g.conn.sock < 0) {
+            /* mark "new" data as "old" when -nonblock is ON */
             if (g.newcnt > 0) {
                 g.rawnew += g.newcnt;
                 g.newcnt = 0;
             }
 
+            /* DO NOT UNCOMMENT THIS! */
+#if 0
             /* mark all data as expect'ed */
             g.expoffset = g.ntotal;
             g.expcnt = 0;
             g.expbuf[0] = '\0';
+#endif
         }
 
         /* new message from client */

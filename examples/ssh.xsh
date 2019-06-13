@@ -17,7 +17,6 @@ fi
 passwd=$2; shift 2
 
 export SEXPECT_SOCKFILE=/tmp/sexpect-ssh-$$.sock
-trap '{ sexpect c && sexpect w; } >& /dev/null' EXIT
 
 sexpect spawn -t 10 \
     ssh -o PreferredAuthentications=keyboard-interactive,password \
@@ -49,4 +48,5 @@ while true; do
     fi
 done
 
+sexpect set -idle 1
 sexpect interact
