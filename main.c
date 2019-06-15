@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.2.1";
+char * const VERSION_ = "2.2.2";
 
 static struct {
     char * progname;
@@ -31,393 +31,121 @@ usage(int exitcode)
 
     fp = (exitcode == 0) ? stdout : stderr;
     fprintf(fp, "\
-USAGE:\n\
+Usage:\n\
+    sexpect [OPTION] SUB-COMMAND [OPTION]\n\
 \n\
-  sexpect [OPTION] [SUB-COMMAND]\n\
+Global options:\n\
+    -debug | -d\n\
+    -help | --help | -h\n\
+    -sock SOCKFILE | -s SOCKFILE\n\
+    -version | --version\n\
 \n\
-DESCRIPTION:\n\
+Environment variables:\n\
+    SEXPECT_SOCKFILE\n\
 \n\
-  Yet Another Expect ('s' is for either simple, super or shell)\n\
-\n\
-  Unlike Expect (Tcl), Expect.pm (Perl), Pexpect (Python) or other similar\n\
-  Expect implementations, 'sexpect' is not bound to any specific programming\n\
-  language so it can be used with any languages which support running external\n\
-  commands.\n\
-\n\
-  Another interesting 'sexpect' feature is that the spawned child process is\n\
-  running in background. You can attach to and detach from it as needed.\n\
-\n\
-GLOBAL OPTIONS:\n\
-\n\
-  -debug | -d\n\
-        Debug mode. The server will run in foreground.\n\
-\n\
-  -help | --help | -h\n\
-\n\
-  -sock SOCKFILE | -s SOCKFILE\n\
-        The socket file used for client/server communication. This option is\n\
-        required for most sub-commands.\n\
-\n\
-        You can set the SEXPECT_SOCKFILE environment variable so you don't\n\
-        need to specify '-sock' for each command.\n\
-\n\
-        The socket file will be automatically created if it does not exist.\n\
-\n\
-  -version | --version\n\
-\n\
-ENVIRONMENT VARIABLES:\n\
-\n\
-  SEXPECT_SOCKFILE\n\
-        The same as global option '-sock' but has lower precedence.\n\
-\n\
-SUB-COMMANDS:\n\
+Sub-commands:\n\
 =============\n\
+spawn (sp, fork)\n\
+----------------\n\
+    sexpect spawn [OPTION] PROGRAM [ARGS]\n\
 \n\
-spawn (sp)\n\
-----------\n\
-\n\
-  USAGE:\n\
-    spawn [OPTION] COMMAND...\n\
-\n\
-  DESCRIPTION:\n\
-    The 'spawn' command will first make itself run as a background server. Then\n\
-    the server will start the specified COMMAND on a new allocated pty. The\n\
-    server will continue running until the child process exits and is waited.\n\
-\n\
-  OPTIONS:\n\
-    -append\n\
-        See option '-logfile'.\n\
-\n\
-    -autowait | -nowait\n\
-        Turn on 'autowait' which by default is off. See sub-command 'set' for\n\
-        more information.\n\
-\n\
-    -close-on-exit | -cloexit\n\
-        Close the pty after the child process has exited even if the child's\n\
-        child processes are still opening the pty. (Example: 'ssh -f')\n\
-\n\
-    -nonblock | -nb\n\
-        Turn on 'nonblock' which by default is off. See sub-command 'set' for\n\
-        more information.\n\
-\n\
-    -idle-close N | -idle N\n\
-        The background server process will close the PTY and exit if there are\n\
-        no client requests in the last N seconds. Usually this would cause the\n\
-        spawned process to receive SIGHUP and be killed.\n\
-\n\
-    -logfile FILE | -logf FILE | -log FILE\n\
-        All output from the child process will be copied to the log file.\n\
-        By default the log file will be overwritten. Use '-append' if you want\n\
-        to append to it.\n\
-\n\
-    -nohup\n\
-        Make the spawned child process ignore SIGHUP.\n\
-\n\
-    -term TERM | -T TERM\n\
-        Set the env var TERM for the child process.\n\
-\n\
-    -timeout N | -t N\n\
-        Set the default timeout for the 'expect' command. A negative value means\n\
-        no timeout. The default value is -1.\n\
-\n\
-    -ttl N\n\
-        The background server process will close the PTY and exit N seconds\n\
-        after the child process is spawned. Usually this would cause the child\n\
-        to receive SIGHUP and be killed.\n\
+    Options:\n\
+        -append\n\
+        -autowait | -nowait\n\
+        -close-on-exit | -cloexit\n\
+        -idle-close N | -idle N\n\
+        -logfile FILE | -logf FILE | -log FILE\n\
+        -nohup\n\
+        -nonblock | -nb\n\
+        -term TERM | -T TERM\n\
+        -timeout N | -t N\n\
+        -ttl N\n\
 \n\
 expect (exp, ex, x)\n\
 -------------------\n\
+    sexpect expect [OPTION] [-exact] PATTERN\n\
+    sexpect expect [OPTION]  -glob   PATTERN\n\
+    sexpect expect [OPTION]  -re     PATTERN\n\
+    sexpect expect [OPTION]  -eof\n\
+    sexpect expect [OPTION]\n\
 \n\
-  USAGE\n\
-    expect [OPTION] [-exact] PATTERN\n\
-    expect [OPTION] -glob PATTERN\n\
-    expect [OPTION] -re PATTERN\n\
-    expect [OPTION] -eof\n\
-    expect\n\
-\n\
-  DESCRIPTION\n\
-    Only one of '-exact', '-glob', '-re' or '-eof' options can be specified.\n\
-    If none of them is specified then it defaults to\n\
-\n\
-        expect -timeout 0 -re '.*'\n\
-\n\
-  OPTIONS\n\
-    -cstring | -cstr | -c\n\
-        C style backslash escapes would be recognized and replaced in PATTERN.\n\
-        See 'send' for more information.\n\
-\n\
-    -eof\n\
-        Wait until EOF from the child process.\n\
-\n\
-    -exact PATTERN | -ex PATTERN\n\
-        Handle PATTERN as an 'exact' string.\n\
-\n\
-    -glob PATTERN | -gl PATTERN\n\
-        Expect the GLOB style PATTERN.\n\
-\n\
-        For convenience, the GLOB patterns also support ^ and $ which match\n\
-        the beginning and end of strings.\n\
-\n\
-    -lookback N | -lb N\n\
-        Show the most recent last N lines of output so you'd know where you\n\
-        were last time.\n\
-\n\
-    -nocase, -icase, -i\n\
-        Ignore case. Used with '-exact', '-glob' or '-re'.\n\
-\n\
-    -re PATTERN\n\
-        Expect the ERE (extended RE) PATTERN.\n\
-\n\
-    -timeout N | -t N\n\
-        Override the default timeout (see 'spawn -timeout').\n\
-\n\
-  EXIT:\n\
-    0 will be returned if the match succeeds before timeout or EOF.\n\
-\n\
-    If the command fails, 'chkerr' can be used to check if the failure is\n\
-    caused by EOF or TIMEOUT. For example (with Bash):\n\
-\n\
-        sexpect expect -re foobar\n\
-        ret=$?\n\
-        if [[ $ret == 0 ]]; then\n\
-            # Cool we got the expected output\n\
-        elif sexpect chkerr -errno $ret -is eof; then\n\
-            # EOF from the child (most probably dead)\n\
-        elif sexpect chkerr -errno $ret -is timeout; then\n\
-            # Timed out waiting for the expected output\n\
-        else\n\
-            # Other errors\n\
-        fi\n\
+    Options:\n\
+        -cstring | -cstr | -c\n\
+        -lookback N | -lb N\n\
+        -nocase | -icase | -i\n\
+        -timeout N | -t N\n\
 \n\
 send (s)\n\
 --------\n\
+    sexpect send [OPTION] [--] STRING\n\
 \n\
-  USAGE:\n\
-    send [OPTION] [--] STRING\n\
-\n\
-  DESCRIPTION:\n\
-\n\
-  OPTIONS:\n\
-    -cstring | -cstr | -c\n\
-        C style backslash escapes would be recognized and replaced before\n\
-        sending to the server.\n\
-\n\
-        The following standard C escapes are supported:\n\
-\n\
-            \\\\ \\a \\b \\f \\n \\r \\t \\v\n\
-            \\xHH \\xH\n\
-            \\o \\ooo \\ooo\n\
-\n\
-        Other supported escapes:\n\
-\n\
-            \\e \\E : ESC, the escape char.\n\
-            \\cX   : CTRL-X, e.g. \\cc will be converted to the CTRL-C char.\n\
-\n\
-    -enter | -cr\n\
-        Append ENTER (\\r) to the specified STRING before sending to the server.\n\
-\n\
-    -file FILE | -f FILE\n\
-        Send the content of the FILE to the server.\n\
-\n\
-    -env NAME | -var NAME\n\
-        Send the value of env var NAME to the server.\n\
-\n\
+    Options:\n\
+        -cstring | -cstr | -c\n\
+        -enter | -cr\n\
+        -file FILE | -f FILE\n\
+        -env NAME | -var NAME\n\
 \n\
 interact (i)\n\
 ------------\n\
+    sexpect interact [OPTION]\n\
 \n\
-  USAGE:\n\
-    interact [OPTION]\n\
-\n\
-  DESCRIPTION:\n\
-    'interact' is used to attach to the child process and manually interact\n\
-    with it. To detach from the child, press CTRL-] .\n\
-\n\
-    'interact' would fail if it's not running on a tty/pty.\n\
-\n\
-    If the child process exits when you're interacting with it then 'interact'\n\
-    will exit with the same exit code of the child process and you don't need\n\
-    to call the 'wait' command any more. And the background server will also\n\
-    exit.\n\
-\n\
-  OPTIONS:\n\
-    -lookback N | -lb N\n\
-        Show the most recent last N lines of output after 'interact' so you'd\n\
-        know where you were last time.\n\
+    Options:\n\
+        -lookback N | -lb N\n\
 \n\
 wait (w)\n\
 --------\n\
-\n\
-  USAGE:\n\
-    wait\n\
-\n\
-  DESCRIPTION:\n\
-    'wait' waits for the child process to complete and 'wait' will exit with\n\
-    same exit code as the child process.\n\
+    sexpect wait\n\
 \n\
 expect_out (expout, out)\n\
 ------------------------\n\
-\n\
-  USAGE:\n\
-    expect_out [-index N]\n\
-\n\
-  DESCRIPTION:\n\
-    After a successful 'expect -re PATTERN', you can use 'expect_out' to get\n\
-    substring matches. Up to 9 (1-9) RE substring matches are saved in the\n\
-    server side. 0 refers to the string which matched the whole PATTERN.\n\
-\n\
-    For example, if the command\n\
-\n\
-        sexpect expect -re 'a(bc)d(ef)g'\n\
-\n\
-    succeeds (exits 0) then the following commands\n\
-\n\
-        sexpect expect_out -index 0\n\
-        sexpect expect_out -index 1\n\
-        sexpect expect_out -index 2\n\
-\n\
-    would output 'abcdefg', 'bc' and 'ef', respectively.\n\
-\n\
-  OPTIONS:\n\
-    -index N | -i N\n\
-        N can be 0-9. The default is 0.\n\
+    sexpect expect_out [<-index | -i> INDEX]\n\
 \n\
 chkerr (chk, ck)\n\
 ----------------\n\
+    sexpect chkerr <-errno | -err> NUM -is REASON\n\
 \n\
-  USAGE:\n\
-    chkerr -errno NUM -is REASON\n\
-\n\
-  DESCRIPTION:\n\
-    If the previous 'expect' command fails, 'chkerr' can be used to check if\n\
-    the failure is caused by EOF or TIMEOUT.\n\
-\n\
-    See 'expect' for an example.\n\
-\n\
-  OPTIONS:\n\
-    -errno NUM | -err NUM | -no NUM\n\
-        NUM is the exit code of the previous failed 'expect' command.\n\
-\n\
-    -is REASON\n\
-        REASON can be 'eof', 'timeout'.\n\
-\n\
-  EXIT:\n\
-    0 will be exited if the specified error NUM is caused by the REASON.\n\
-    1 will be exited if the specified error NUM is NOT caused by the REASON.\n\
+    Options:\n\
+        REASON: 'eof', 'timeout'\n\
 \n\
 close (c)\n\
 ---------\n\
-\n\
-  USAGE:\n\
-    close\n\
-\n\
-  DESCRIPTION:\n\
-    Close the child process's pty by force. This would usually cause the child\n\
-    to receive SIGHUP and be killed.\n\
+    sexpect close\n\
 \n\
 kill (k)\n\
 --------\n\
+    sexpect kill [-SIGNAME] [-SIGNUM]\n\
 \n\
-  USAGE:\n\
-    kill -NAME\n\
-    kill -NUM\n\
-\n\
-  DESCRIPTION:\n\
-    Send the specified signal to the child process.\n\
-\n\
-  OPTIONS:\n\
-    -SIGNAME\n\
-        Specify the signal with name. The following signal names are\n\
-        supported:\n\
-\n\
-            SIGCONT SIGHUP  SIGINT  SIGKILL SIGQUIT\n\
-            SIGSTOP SIGTERM SIGUSR1 SIGUSR2\n\
-\n\
-        The SIGNAME is case insensitive and the prefix 'SIG' is optional.\n\
-\n\
-    -SIGNUM\n\
-        Specify the signal with number.\n\
+    Options:\n\
+        SIGNAME: SIGCONT SIGHUP  SIGINT  SIGKILL SIGQUIT\n\
+                 SIGSTOP SIGTERM SIGUSR1 SIGUSR2\n\
 \n\
 set\n\
-----\n\
+--------\n\
+    sexpect set [OPTION]\n\
 \n\
-  USAGE:\n\
-    set [OPTION]\n\
-\n\
-  DESCRIPTION:\n\
-    The 'set' sub-command can be used to dynamically change server side's\n\
-    parameters after 'spawn'.\n\
-\n\
-  OPTIONS:\n\
-    -autowait FLAG | -nowait FLAG\n\
-        FLAG can be 0, 1, on, off.\n\
-\n\
-        By default, after the child process exits, the server side will wait\n\
-        for the client to call 'wait' to get the exit status of the child and\n\
-        then the server will exit.\n\
-\n\
-        When 'autowait' is turned on, after the child process exits it'll\n\
-        be automatically waited and then the server will exit.\n\
-\n\
-    -nonblock FLAG | -nb FLAG\n\
-        FLAG can be 0, 1, on, off.\n\
-\n\
-        By default, the child process will be blocked if it outputs too much\n\
-        and the client (either 'expect', 'interact' or 'wait') does not read\n\
-        the output in time.\n\
-\n\
-        When 'nonblock' is turned on, the output from the child will not be\n\
-        blocked so the child can continue running.\n\
-\n\
-    -idle-close N | -idle N\n\
-        Set the IDLE value. See 'spawn' for details.\n\
-\n\
-    -timeout N | -t N\n\
-        See 'spawn'.\n\
-\n\
-    -ttl N\n\
-        See 'spawn'.\n\
+    Options:\n\
+        -autowait FLAG | -nowait FLAG\n\
+        -idle-close N | -idle N\n\
+        -nonblock FLAG | -nb FLAG\n\
+        -timeout N | -t N\n\
+        -ttl N\n\
 \n\
 get\n\
-----\n\
+--------\n\
+    sexpect get [OPTION]\n\
 \n\
-  USAGE:\n\
-    get [OPTION]\n\
+    Options:\n\
+        -all | -a\n\
+        -autowait | -nowait\n\
+        -idle-close | -idle\n\
+        -nonblock | -nb\n\
+        -pid\n\
+        -ppid\n\
+        -tty | -pty | -pts\n\
+        -timeout | -t\n\
+        -ttl\n\
 \n\
-  DESCRIPTION:\n\
-    Retrieve server side information.\n\
-\n\
-  OPTIONS:\n\
-    -all | -a\n\
-        Get all supported information from server side.\n\
-\n\
-    -autowait | -nowait\n\
-        Get the 'autowait' flag.\n\
-\n\
-    -nonblock | -nb\n\
-        Get the 'nonblock' flag.\n\
-\n\
-    -idle-close | -idle\n\
-        Get the IDLE value. See 'spawn' for details.\n\
-\n\
-    -pid\n\
-        Get the child process's PID.\n\
-\n\
-    -ppid\n\
-        Get the child process's PPID (the server's PID).\n\
-\n\
-    -tty | -pty | -pts\n\
-        Get the child process's tty.\n\
-\n\
-    -timeout | -t\n\
-        Get the current default timeout value.\n\
-\n\
-    -ttl\n\
-        Get the TTL value. See 'spawn' for details.\n\
-\n\
-BUGS:\n\
-  Report bugs to Clark Wang <dearvoid @ gmail.com> or\n\
-  https://github.com/clarkwang/sexpect\n\
+Report bugs to Clark Wang <dearvoid@gmail.com> or https://github.com/clarkwang/sexpect/\n\
 ");
 
     exit(exitcode);
@@ -610,7 +338,7 @@ getargs(int argc, char **argv)
                     g.cmdopts.set.timeout = PASS_DEF_TMOUT;
 
                     /* spawn */
-                } else if (str1of(arg, "spawn", "sp", NULL) ) {
+                } else if (str1of(arg, "spawn", "sp", "fork", NULL) ) {
                     g.cmdopts.cmd = "spawn";
                     g.cmdopts.spawn.def_timeout = PASS_DEF_TMOUT;
                     g.cmdopts.spawn.logfd = -1;

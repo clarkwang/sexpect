@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# `ps -p <pid> -o stat' also works on macOS.
+#
 
 source $SRCDIR/tests/common.sh || exit 1
 
@@ -21,21 +24,21 @@ assert_run sexpect sp -ttl 5 od -v /dev/zero
 run sleep 1
 pid=$( sexpect get -pid )
 info "pid=$pid"
-st=$( ps p $pid ho state )
+st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
-assert '[[ $st == S ]]'
+assert '[[ $st == S* ]]'
 
 assert_run sexpect set -discard 1
 run sleep .5
-st=$( ps p $pid ho state )
+st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
-assert '[[ $st == R ]]'
+assert '[[ $st == R* ]]'
 
 assert_run sexpect set -discard 0
 run sleep 1
-st=$( ps p $pid ho state )
+st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
-assert '[[ $st == S ]]'
+assert '[[ $st == S* ]]'
 
 assert_run sexpect set -nowait 1
 assert_run sexpect c
@@ -46,21 +49,21 @@ assert_run sexpect sp -discard -ttl 5 od -v /dev/zero
 run sleep 1
 pid=$( sexpect get -pid )
 info "pid=$pid"
-st=$( ps p $pid ho state )
+st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
-assert '[[ $st == R ]]'
+assert '[[ $st == R* ]]'
 
 assert_run sexpect set -discard 0
 run sleep 1
-st=$( ps p $pid ho state )
+st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
-assert '[[ $st == S ]]'
+assert '[[ $st == S* ]]'
 
 assert_run sexpect set -discard 1
 run sleep 1
-st=$( ps p $pid ho state )
+st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
-assert '[[ $st == R ]]'
+assert '[[ $st == R* ]]'
 
 assert_run sexpect set -nowait 1
 assert_run sexpect c

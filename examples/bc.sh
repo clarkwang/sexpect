@@ -9,7 +9,7 @@ if ! which sexpect >& /dev/null; then
 fi
 
 export SEXPECT_SOCKFILE=/tmp/sexpect-bc-iGciUZ.sock
-sexpect spawn -timeout 2 -nowait bc
+sexpect spawn -idle 10 -timeout 5 bc
 
 if ! sexpect expect -cstr -re 'warranty.*[\r\n]'; then
     sexpect kill -kill
@@ -32,6 +32,7 @@ for ((i = 1; ; ++i)); do
 
     if [[ $sum -gt $max ]]; then
         sexpect send -cstr '\cd'
+        sexpect wait
         exit
     fi
 done

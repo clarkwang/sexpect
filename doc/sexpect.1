@@ -1,0 +1,602 @@
+'\" t
+.\"     Title: sexpect
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: Asciidoctor 1.5.4
+.\"      Date: 2019-06-15
+.\"    Manual: sexpect manual
+.\"    Source: sexpect 2.2.2
+.\"  Language: English
+.\"
+.TH "SEXPECT" "1" "2019-06-15" "sexpect 2.2.2" "sexpect manual"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.LINKSTYLE blue R < >
+.SH "NAME"
+sexpect \- Expect for Shells
+.SH "SYNOPSIS"
+.sp
+\fBsexpect\fP [\fIOPTION\fP] \fISUB\-COMMAND\fP [\fIOPTION\fP]
+.SH "DESCRIPTION"
+.sp
+\fBsexpect\fP is another implementation of \fBExpect\fP which is specifically
+designed for \fBShell\fP scripts (sh, bash, ksh, zsh, ...).
+.sp
+Unlike \fBExpect\fP (for \fBTcl\fP), \fBExpect.pm\fP (for \fBPerl\fP), \fBPexpect\fP (for
+\fBPython\fP) or other similar
+\fBExpect\fP implementations, \fBsexpect\fP is not bound to any specific programming
+language so \fBsexpect\fP can also be used with other programming languages as
+long as they support running external commands.
+.sp
+Another interesting \fBsexpect\fP feature is that the spawned  process is
+running in background.
+You can attach to or detach from it as needed (as with \fBGNU screen\fP).
+.sp
+\fBsexpect\fP is designed in the client/server model.
+\(aq\fBsexpect spawn\fP\(aq starts the server (running as a daemon) and runs the
+specified \fIPROGRAM\fP in background.
+Other \fBsexpect\fP sub\-commands (\fBsend\fP, \fBexpect\fP, \fBwait\fP, ...) communicate to the
+server as client commands.
+.SH "GLOBAL OPTIONS"
+.sp
+\-debug | \-d
+.RS 4
+Debug mode. The server (\fBsexpect spawn\fP) will run in foreground and more
+information will be displayed.
+.RE
+.sp
+\-help | \-\-help | \-h
+.RS 4
+Show brief \fBsexpect\fP help.
+.RE
+.sp
+\-sock SOCKFILE | \-s SOCKFILE
+.RS 4
+The socket file used for client/server communication.
+This option is required for most sub\-commands.
+.sp
+You can save the \fISOCKFILE\fP in the \fBSEXPECT_SOCKFILE\fP environment variable so
+you don\(cqt need to specify the \(aq\fB\-sock\fP\(aq option for each command.
+For example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+export SEXPECT_SOCKFILE=~/.sexpect\-bash.sock
+sexpect spawn bash \-\-norc
+\&... ...
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The socket file will be automatically created if it does not exist.
+.RE
+.sp
+\-version | \-\-version
+.RS 4
+Show \fBsexpect\fP version.
+.RE
+.SH "SUB\-COMMANDS"
+.sp
+Sub\-commands may have aliases. For example, \(aq\fBsexpect spawn\fP\(aq can also be
+written as \(aq\fBsexpect sp\fP\(aq or \(aq\fBsexpect fork\fP\(aq.
+For each sub\-command, the supported aliases are listed in parentheses.
+.SS "spawn (sp, fork)"
+.sp
+\fBsexpect spawn\fP [\fIOPTION\fP] \fIPROGRAM\fP [\fIARGS\fP]
+.RS 4
+The \(aq\fBspawn\fP\(aq sub\-command will first make itself run as a background
+server.
+Then the server will start the specified \fIPROGRAM\fP on a new allocated pty.
+.RE
+.sp
+The \(aq\fBspawn\fP\(aq sub\-command supports the following options:
+.sp
+\-append
+.RS 4
+See option \(aq\fB\-logfile\fP\(aq.
+.RE
+.sp
+\-autowait | \-nowait
+.RS 4
+Turn on the \(aq\fBautowait\fP\(aq flag which by default is \fBoff\fP.
+See sub\-command \(aq\fBset\fP\(aq for more information.
+.RE
+.sp
+\-close\-on\-exit | \-cloexit
+.RS 4
+Close the pty after the spawned process has exited even if the spawned
+process\(cqs child processes are still opening the pty. (Example: \(aq\fBssh \-f\fP\(aq)
+.RE
+.sp
+\-nonblock | \-nb
+.RS 4
+Turn on the \(aq\fBnonblock\fP\(aq flag which by default is \fBoff\fP.
+See sub\-command \(aq\fBset\fP\(aq for more information.
+.RE
+.sp
+\-idle\-close N | \-idle N
+.RS 4
+The background server process will close the PTY and exit if there are
+no client requests in the last \fIN\fP seconds.
+Closing the PTY would usually cause the spawned process to receive
+\fBSIGHUP\fP and be killed.
+.RE
+.sp
+\-logfile FILE | \-logf FILE | \-log FILE
+.RS 4
+All output from the spawned process will be copied to the specified
+\fIFILE\fP.
+By default the \fIFILE\fP will be overwritten.
+Use \(aq\fB\-append\fP\(aq if you want to append to it.
+.RE
+.sp
+\-nohup
+.RS 4
+Make the spawned process ignore \fBSIGHUP\fP. (Example: \(aq\fBssh \-f\fP\(aq)
+.RE
+.sp
+\-term TERM | \-T TERM
+.RS 4
+Set the environment variable \fBTERM\fP for the spawned process.
+This is useful when the \fBTERM\fP variable is not set (for example for jobs
+started by \fBcron\fP/\fBcrond\fP or \fBatd\fP).
+.RE
+.sp
+\-timeout N | \-t N
+.RS 4
+Set the default timeout for \(aq\fBsexpect expect\fP\(aq.
+A negative value means no timeout.
+The default value is \fB\-1\fP.
+.RE
+.sp
+\-ttl N
+.RS 4
+The background server process will close the PTY and exit \fIN\fP seconds
+after the process is spawned.
+Usually this would cause the process to receive \fBSIGHUP\fP and be killed.
+.RE
+.sp
+Exit status:
+.RS 4
+\fB0\fP will be returned if the background server has successfully started.
+This does not necessarily mean the \fIPROGRAM\fP has been successfully
+spawned (e.g. if the specified \fIPROGRAM\fP cannot be found).
+Non\-zero will be returned if the server fails to start for some reason.
+.RE
+.SS "expect (exp, ex, x)"
+.sp
+\fBsexpect expect\fP [\fIOPTION\fP] [ <[\fB\-exact\fP] | \fB\-glob\fP | \fB\-re\fP> \fIPATTERN\fP] [\fB\-eof\fP]
+.RS 4
+If the \fIPATTERN\fP is specified, it\(cqll wait until the \fIPATTERN\fP matches
+the output of the spawned process.
+If \fB\-eof\fP is specified, it\(cqll wait until \fBEOF\fP (end\-of\-file) is seen.
+If neither \fIPATTERN\fP nor \fB\-eof\fP is specified, then it defaults to
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+expect \-timeout 0 \-re \(aq.*\(aq
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+The \(aq\fBexpect\fP\(aq sub\-command supports the following options:
+.sp
+\-cstring | \-cstr | \-c
+.RS 4
+C style backslash escapes would be recognized and replaced in \fIPATTERN\fP.
+See sub\-command \(aq\fBsend\fP\(aq for the list of supported backslash escapes.
+.RE
+.sp
+\-eof
+.RS 4
+Wait until \fBEOF\fP is seen from the spawned process.
+.sp
+Note that receiving \fBEOF\fP from the process does not necessarily mean the
+process has exited.
+.RE
+.sp
+\-exact PATTERN | \-ex PATTERN
+.RS 4
+Match the \fIPATTERN\fP as an "exact" string.
+.RE
+.sp
+\-glob PATTERN | \-gl PATTERN
+.RS 4
+Match the \fIPATTERN\fP as a glob style pattern.
+.sp
+For convenience, the glob patterns also support \fB^\fP and \fB$\fP which match
+the beginning and end of data currently in the internal matching buffer.
+.RE
+.sp
+\-lookback N | \-lb N
+.RS 4
+Show the most recent last \fIN\fP lines of output so you\(cqd know where you
+were last time.
+.RE
+.sp
+\-nocase | \-icase | \-i
+.RS 4
+Ignore case when matching PATTERN. Used with \(aq\fB\-exact\fP\(aq, \(aq\fB\-glob\fP\(aq or
+\(aq\fB\-re\fP\(aq.
+.RE
+.sp
+\-re PATTERN
+.RS 4
+Match the \fIPATTERN\fP as an extended regular expression (\fBERE\fP).
+.RE
+.sp
+\-timeout N | \-t N
+.RS 4
+Override the default \(aq\fBexpect\fP\(aq timeout (see \(aq\fBspawn \-timeout\fP\(aq).
+.RE
+.sp
+Exit status:
+.RS 4
+\fB0\fP will be returned if the match succeeds before timeout or \fBEOF\fP.
+.sp
+If the command fails, the \(aq\fBchkerr\fP\(aq sub\-command can be used to check if the
+failure is caused by \fBEOF\fP or \fBTIMEOUT\fP.
+For example (in \fBBash\fP):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+sexpect expect \-re foobar
+ret=$?
+if [[ $ret == 0 ]]; then
+    # Cool we got the expected output
+elif sexpect chkerr \-errno $ret \-is eof; then
+    # EOF from the spawned process (most probably dead)
+elif sexpect chkerr \-errno $ret \-is timeout; then
+    # Timed out waiting for the expected output
+else
+    # Other errors
+fi
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SS "send (s)"
+.sp
+\fBsexpect send\fP [\fIOPTION\fP] [ [\-\-] \fISTRING\fP | \fB\-file\fP \fIFILE\fP | \fB\-env\fP \fINAME\fP]
+.RS 4
+The \(aq\fBsend\fP\(aq sub\-command sends data to the spawned process.
+.sp
+Note that the data to be sent must be less than \fB1024\fP bytes.
+To send more data, use multiple \(aq\fBsexpect send\fP\(aq commands.
+.RE
+.sp
+The \(aq\fBsend\fP\(aq sub\-command supports the following options:
+.sp
+\-cstring | \-cstr | \-c
+.RS 4
+C language style backslash escapes would be recognized and replaced in
+\fISTRING\fP before sending to the spawned process.
+.sp
+The following standard C language escapes are supported:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\(rs\(rs \(rsa \(rsb \(rsf \(rsn \(rsr \(rst \(rsv
+\(rsxHH \(rsxH
+\(rsooo \(rsoo \(rso
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Other supported escapes:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\(rse \(rsE : ESC, the escape char.
+\(rscX   : CTRL\-X, e.g. \(rscc will be converted to the CTRL\-C char.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+\-enter | \-cr
+.RS 4
+Append \fBENTER\fP (\fB\(rsr\fP) to the specified \fISTRING\fP before sending to the
+spawned process.
+.RE
+.sp
+\-file FILE | \-f FILE
+.RS 4
+Send the content of the \fIFILE\fP to the spawned process.
+.RE
+.sp
+\-env NAME | \-var NAME
+.RS 4
+Send the value of environment variable \fINAME\fP to the spawned process.
+.RE
+.SS "interact (i)"
+.sp
+\fBsexpect interact\fP [\fIOPTION\fP]
+.RS 4
+The \(aq\fBinteract\fP\(aq sub\-command is used to attach to the spawned process and
+manually interact with it.
+To detach from the process, press \fBCTRL\-]\fP .
+.sp
+\(aq\fBinteract\fP\(aq would fail if it\(cqs not running on a tty/pty.
+.sp
+If the spawned process exits when you\(cqre interacting with it then \(aq\fBinteract\fP\(aq
+will exit with the same exit code of the spawned process and you don\(cqt need
+to call the \(aq\fBwait\fP\(aq sub\-command any more.
+And the background server will also exit.
+.RE
+.sp
+The \(aq\fBinteract\fP\(aq sub\-command supports the following options:
+.sp
+\-lookback N | \-lb N
+.RS 4
+Show the most recent last \fIN\fP lines of output after attaching to the
+process so you\(cqd know where you were last time.
+.RE
+.SS "wait (w)"
+.sp
+\fBsexpect wait\fP
+.RS 4
+The \(aq\fBwait\fP\(aq sub\-command waits for the spawned process to complete and
+return the spawned process\(aq exit code.
+.RE
+.SS "expect_out (expout, out)"
+.sp
+\fBsexpect expect_out\fP [< \fB\-index\fP | \fB\-i\fP> \fIINDEX\fP]
+.RS 4
+After the \(aq\fBexpect\fP\(aq sub\-command successfully matches the specified
+\fIPATTERN\fP, you can use the \(aq\fBexpect_out\fP\(aq sub\-command to get substring
+matches.
+Up to \fB9\fP (\fB1\-9\fP) RE substring matches are saved in the server side.
+\fB0\fP refers to the string which matched the whole \fIPATTERN\fP.
+\fIINDEX\fP defaults to \fB0\fP if it\(cqs not specified.
+.sp
+For example, if the command
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+sexpect expect \-re \(aqa(bc)d(ef)g\(aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+succeeds (exits 0) then the following commands
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+sexpect expect_out \-index 0
+sexpect expect_out \-index 1
+sexpect expect_out \-index 2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+would output \fBabcdefg\fP, \fBbc\fP and \fBef\fP, respectively.
+.RE
+.SS "chkerr (chk, ck)"
+.sp
+\fBsexpect chkerr\fP \fB\-errno\fP \fINUM\fP \fB\-is\fP \fIREASON\fP
+.RS 4
+If the previous \(aq\fBexpect\fP\(aq sub\-command fails, the \(aq\fBchkerr\fP\(aq sub\-command
+can be used to check if the failure is caused by \fBEOF\fP or \fBTIMEOUT\fP.
+.sp
+See the \(aq\fBexpect\fP\(aq sub\-command for an example.
+.RE
+.sp
+The \(aq\fBchkerr\fP\(aq sub\-command supports the following options:
+.sp
+\-errno NUM | \-err NUM
+.RS 4
+\fINUM\fP is the exit code of the previous failed \(aq\fBexpect\fP\(aq sub\-command.
+.RE
+.sp
+\-is REASON
+.RS 4
+\fIREASON\fP can be \(aq\fBeof\fP\(aq, \(aq\fBtimeout\fP\(aq.
+.RE
+.sp
+Exit status
+.RS 4
+\fB0\fP will be returned if the specified error \fINUM\fP is caused by the
+\fIREASON\fP.
+\fB1\fP will be returned if the specified error \fINUM\fP is \fBNOT\fP caused by the
+\fIREASON\fP.
+.RE
+.SS "close (c)"
+.sp
+\fBsexpect close\fP
+.RS 4
+The \(aq\fBclose\fP\(aq sub\-command closes the spawned process\(cqs pty by force.
+This would usually cause the process to receive \fBSIGHUP\fP and be killed.
+.RE
+.SS "kill (k)"
+.sp
+\fBsexpect kill\fP [\-\fISIGNAME\fP | \-\fISIGNUM\fP]
+.RS 4
+The \(aq\fBkill\fP\(aq sub\-command sends the specified signal to the spawned
+process.
+The default signal is \fBSIGTERM\fP.
+.RE
+.sp
+The \(aq\fBkill\fP\(aq sub\-command supports the following options:
+.sp
+\-SIGNAME
+.RS 4
+Specify the signal with name.
+Only the following signal names are supported:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+SIGCONT SIGHUP  SIGINT  SIGKILL SIGQUIT
+SIGSTOP SIGTERM SIGUSR1 SIGUSR2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The \fISIGNAME\fP is case insensitive and the prefix \(aq\fBSIG\fP\(aq is optional.
+.RE
+.sp
+\-SIGNUM
+.RS 4
+Specify the signal with number.
+.RE
+.SS "set"
+.sp
+\fBsexpect set\fP [\fIOPTION\fP]
+.RS 4
+The \(aq\fBset\fP\(aq sub\-command can be used to dynamically change server side\(cqs
+parameters after \(aq\fBspawn\fP\(aq.
+.RE
+.sp
+The \(aq\fBset\fP\(aq sub\-command supports the following options:
+.sp
+\-autowait FLAG | \-nowait FLAG
+.RS 4
+\fIFLAG\fP can be \fB0\fP, \fB1\fP, \fBon\fP, \fBoff\fP.
+.sp
+By default, after the spawned process exits, the server side will wait
+for the client to call \(aqwait\(aq to get the exit status of the process and
+then the server will exit.
+.sp
+When \(aq\fBautowait\fP\(aq is turned on, after the spawned process exits it\(cqll
+be automatically waited and then the server will exit.
+.RE
+.sp
+\-nonblock FLAG | \-nb FLAG
+.RS 4
+\fIFLAG\fP can be \fB0\fP, \fB1\fP, \fBon\fP, \fBoff\fP.
+.sp
+By default, the spawned process will be blocked if it outputs too much
+and the client (either \(aq\fBexpect\fP\(aq, \(aq\fBinteract\fP\(aq or \(aq\fBwait\fP\(aq) does not read
+the output in time.
+.sp
+When \(aq\fBnonblock\fP\(aq is turned on, the output from the process will not be
+blocked so the process can continue running.
+.RE
+.sp
+\-idle\-close N | \-idle N
+.RS 4
+Set the IDLE value.
+See the \(aq\fBspawn\fP\(aq sub\-command for details.
+.RE
+.sp
+\-timeout N | \-t N
+.RS 4
+See the \(aq\fBspawn\fP\(aq sub\-command for details.
+.RE
+.sp
+\-ttl N
+.RS 4
+See the \(aq\fBspawn\fP\(aq sub\-command for details.
+.RE
+.SS "get"
+.sp
+\fBsexpect get\fP [\fIOPTION\fP]
+.RS 4
+Retrieve server side information.
+.RE
+.sp
+The \(aq\fBget\fP\(aq sub\-command supports the following options:
+.sp
+\-all | \-a
+.RS 4
+Get all available information from server side.
+.RE
+.sp
+\-autowait | \-nowait
+.RS 4
+Get the \(aq\fBautowait\fP\(aq flag.
+.RE
+.sp
+\-nonblock | \-nb
+.RS 4
+Get the \(aq\fBnonblock\fP\(aq flag.
+.RE
+.sp
+\-idle\-close | \-idle
+.RS 4
+Get the IDLE value. See \(aq\fBspawn\fP\(aq for details.
+.RE
+.sp
+\-pid
+.RS 4
+Get the spawned process\(cqs PID.
+.RE
+.sp
+\-ppid
+.RS 4
+Get the spawned process\(cqs PPID.
+.RE
+.sp
+\-tty | \-pty | \-pts
+.RS 4
+Get the spawned process\(cqs tty.
+.RE
+.sp
+\-timeout | \-t
+.RS 4
+Get the current default timeout value.
+.RE
+.sp
+\-ttl
+.RS 4
+Get the TTL value. See \(aq\fBspawn\fP\(aq for details.
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.sp
+SEXPECT_SOCKFILE
+.RS 4
+See \fBGLOBAL OPTIONS\fP for details.
+.RE
+.SH "RESOURCES"
+.sp
+Project home: \c
+.URL "https://github.com/clarkwang/sexpect/" "" ""
+.sp
+Examples: \c
+.URL "https://github.com/clarkwang/sexpect/tree/master/examples/" "" ""
+.SH "SEE ALSO"
+.sp
+expect(1), pty(7), pts(4), glob(3), fnmatch(3)
+.SH "AUTHOR"
+.sp
+Written by \c
+.MTO "dearvoid\(atgmail.com" "Clark Wang" " "
+.
+.SH "REPORTING BUGS"
+.sp
+Report bugs to \c
+.MTO "dearvoid\(atgmail.com" "Clark Wang" " "
+or
+open an issue at \c
+.URL "https://github.com/clarkwang/sexpect/" "" ""

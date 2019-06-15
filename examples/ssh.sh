@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Usage:
-#   ./ssh.xsh -p PASSWORD [USER@]HOST [COMMAND ...]
+#   ./ssh.sh -p PASSWORD [USER@]HOST [COMMAND ...]
 #
 
 function fatal()
@@ -18,10 +18,15 @@ passwd=$2; shift 2
 
 export SEXPECT_SOCKFILE=/tmp/sexpect-ssh-$$.sock
 
-sexpect spawn -t 10 \
+type -P sexpect >& /dev/null || exit 1
+
+sexpect spawn -idle 60 -t 10 \
     ssh -o PreferredAuthentications=keyboard-interactive,password \
         -o NumberOfPasswordPrompts=1 \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
         -o ControlPath=none \
+        -o LogLevel=ERROR \
         "$@"
 
 while true; do
@@ -48,5 +53,5 @@ while true; do
     fi
 done
 
-sexpect set -idle 1
+sexpect set -idle 5
 sexpect interact
