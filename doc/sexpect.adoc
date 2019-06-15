@@ -419,7 +419,7 @@ SEXPECT_SOCKFILE ::
 
 Project home: https://github.com/clarkwang/sexpect/
 
-Examples: https://github.com/clarkwang/sexpect/tree/master/examples/
+// Examples: https://github.com/clarkwang/sexpect/tree/master/examples/
 
 == SEE ALSO
 
