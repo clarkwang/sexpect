@@ -40,7 +40,7 @@ Tested on:
     
 # Manual
 
-See [doc/manual.txt](doc/manual.txt) .
+See [doc/sexpect.html](https://github.com/clarkwang/sexpect/blob/master/doc/sexpect.html) .
     
 # Examples
 

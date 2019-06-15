@@ -1,0 +1,435 @@
+= sexpect(1)
+:doctype: manpage
+:sexpect-version: 2.2.2
+:man manual: sexpect manual
+:man source: sexpect {sexpect-version}
+:page-layout: base
+
+== NAME
+
+sexpect - Expect for Shells
+
+== SYNOPSIS
+
+*sexpect* [_OPTION_] _SUB-COMMAND_ [_OPTION_]
+
+== DESCRIPTION
+
+*sexpect* is another implementation of *Expect* which is specifically
+designed for *Shell* scripts (sh, bash, ksh, zsh, ...).
+
+Unlike *Expect* (for *Tcl*), *Expect.pm* (for *Perl*), *Pexpect* (for
+*Python*) or other similar
+*Expect* implementations, *sexpect* is not bound to any specific programming
+language so *sexpect* can also be used with other programming languages as
+long as they support running external commands.
+
+Another interesting *sexpect* feature is that the spawned  process is
+running in background.
+You can attach to or detach from it as needed (as with *GNU screen*).
+
+*sexpect* is designed in the client/server model.
+'*sexpect spawn*' starts the server (running as a daemon) and runs the
+specified _PROGRAM_ in background.
+Other *sexpect* sub-commands (*send*, *expect*, *wait*, ...) communicate to the
+server as client commands.
+
+== GLOBAL OPTIONS
+
+-debug | -d::
+    Debug mode. The server (*sexpect spawn*) will run in foreground and more
+    information will be displayed.
+
+-help | --help | -h::
+    Show brief *sexpect* help.
+
+-sock SOCKFILE | -s SOCKFILE::
+    The socket file used for client/server communication.
+    This option is required for most sub-commands.
++
+You can save the _SOCKFILE_ in the *SEXPECT_SOCKFILE* environment variable so
+you don't need to specify the '*-sock*' option for each command.
+For example:
+
+    export SEXPECT_SOCKFILE=~/.sexpect-bash.sock
+    sexpect spawn bash --norc
+    ... ...
++
+The socket file will be automatically created if it does not exist.
+
+-version | --version::
+    Show *sexpect* version.
+
+== SUB-COMMANDS
+
+Sub-commands may have aliases. For example, '*sexpect spawn*' can also be
+written as '*sexpect sp*' or '*sexpect fork*'.
+For each sub-command, the supported aliases are listed in parentheses.
+
+=== spawn (sp, fork)
+
+*sexpect spawn* [_OPTION_] _PROGRAM_ [_ARGS_]::
+
+    The '*spawn*' sub-command will first make itself run as a background
+    server.
+    Then the server will start the specified _PROGRAM_ on a new allocated pty.
+
+The '*spawn*' sub-command supports the following options:
+
+-append::
+    See option '*-logfile*'.
+
+-autowait | -nowait::
+    Turn on the '*autowait*' flag which by default is *off*.
+    See sub-command '*set*' for more information.
+
+-close-on-exit | -cloexit::
+    Close the pty after the spawned process has exited even if the spawned
+    process's child processes are still opening the pty. (Example: '*ssh -f*')
+
+-nonblock | -nb::
+    Turn on the '*nonblock*' flag which by default is *off*.
+    See sub-command '*set*' for more information.
+
+-idle-close N | -idle N::
+    The background server process will close the PTY and exit if there are
+    no client requests in the last _N_ seconds.
+    Closing the PTY would usually cause the spawned process to receive
+    *SIGHUP* and be killed.
+
+-logfile FILE | -logf FILE | -log FILE::
+    All output from the spawned process will be copied to the specified
+    _FILE_.
+    By default the _FILE_ will be overwritten.
+    Use '*-append*' if you want to append to it.
+
+-nohup::
+    Make the spawned process ignore *SIGHUP*. (Example: '*ssh -f*')
+
+-term TERM | -T TERM::
+    Set the environment variable *TERM* for the spawned process.
+    This is useful when the *TERM* variable is not set (for example for jobs
+    started by *cron*/*crond* or *atd*).
+
+-timeout N | -t N::
+    Set the default timeout for '*sexpect expect*'.
+    A negative value means no timeout.
+    The default value is *-1*.
+
+-ttl N::
+    The background server process will close the PTY and exit _N_ seconds
+    after the process is spawned.
+    Usually this would cause the process to receive *SIGHUP* and be killed.
+
+Exit status: ::
+    *0* will be returned if the background server has successfully started.
+    This does not necessarily mean the _PROGRAM_ has been successfully 
+    spawned (e.g. if the specified _PROGRAM_ cannot be found).
+    Non-zero will be returned if the server fails to start for some reason.
+
+=== expect (exp, ex, x)
+
+*sexpect expect* [_OPTION_] [ <[*-exact*] | *-glob* | *-re*> _PATTERN_] [*-eof*]::
+    If the _PATTERN_ is specified, it'll wait until the _PATTERN_ matches
+    the output of the spawned process.
+    If *-eof* is specified, it'll wait until *EOF* (end-of-file) is seen.
+    If neither _PATTERN_ nor *-eof* is specified, then it defaults to
+
+        expect -timeout 0 -re '.*'
+
+The '*expect*' sub-command supports the following options:
+
+-cstring | -cstr | -c::
+    C style backslash escapes would be recognized and replaced in _PATTERN_.
+    See sub-command '*send*' for the list of supported backslash escapes.
+
+-eof::
+    Wait until *EOF* is seen from the spawned process.
++
+Note that receiving *EOF* from the process does not necessarily mean the
+process has exited.
+
+-exact PATTERN | -ex PATTERN::
+    Match the _PATTERN_ as an "exact" string.
+
+-glob PATTERN | -gl PATTERN::
+    Match the _PATTERN_ as a glob style pattern.
++
+For convenience, the glob patterns also support *^* and *$* which match
+the beginning and end of data currently in the internal matching buffer.
+
+-lookback N | -lb N::
+    Show the most recent last _N_ lines of output so you'd know where you
+    were last time.
+
+-nocase | -icase | -i::
+    Ignore case when matching PATTERN. Used with '*-exact*', '*-glob*' or
+    '*-re*'.
+
+-re PATTERN::
+    Match the _PATTERN_ as an extended regular expression (*ERE*).
+
+-timeout N | -t N::
+    Override the default '*expect*' timeout (see '*spawn -timeout*').
+
+Exit status: ::
+    *0* will be returned if the match succeeds before timeout or *EOF*.
++
+If the command fails, the '*chkerr*' sub-command can be used to check if the
+failure is caused by *EOF* or *TIMEOUT*.
+For example (in *Bash*):
+
+    sexpect expect -re foobar
+    ret=$?
+    if [[ $ret == 0 ]]; then
+        # Cool we got the expected output
+    elif sexpect chkerr -errno $ret -is eof; then
+        # EOF from the spawned process (most probably dead)
+    elif sexpect chkerr -errno $ret -is timeout; then
+        # Timed out waiting for the expected output
+    else
+        # Other errors
+    fi
+
+=== send (s)
+
+*sexpect send* [_OPTION_] [ [--] _STRING_ | *-file* _FILE_ | *-env* _NAME_] ::
+    The '*send*' sub-command sends data to the spawned process.
++
+Note that the data to be sent must be less than *1024* bytes.
+To send more data, use multiple '*sexpect send*' commands.
+
+The '*send*' sub-command supports the following options:
+
+-cstring | -cstr | -c ::
+    C language style backslash escapes would be recognized and replaced in
+    _STRING_ before sending to the spawned process.
++
+The following standard C language escapes are supported:
+//
+// FIXME: `\\' would become `\' in generated man page.
+//
+// WORKAROUND:
+//   Pass asciidoctor's output to sed and replace `\(rs\ ' with `\(rs\(rs '
+//
+
+    \\ \a \b \f \n \r \t \v
+    \xHH \xH
+    \ooo \oo \o
++
+Other supported escapes:
+
+    \e \E : ESC, the escape char.
+    \cX   : CTRL-X, e.g. \cc will be converted to the CTRL-C char.
+
+-enter | -cr ::
+    Append *ENTER* (*\r*) to the specified _STRING_ before sending to the
+    spawned process.
+
+-file FILE | -f FILE ::
+    Send the content of the _FILE_ to the spawned process.
+
+-env NAME | -var NAME ::
+    Send the value of environment variable _NAME_ to the spawned process.
+
+=== interact (i)
+
+*sexpect interact* [_OPTION_] ::
+    The '*interact*' sub-command is used to attach to the spawned process and
+    manually interact with it.
+    To detach from the process, press *CTRL-]* .
++
+'*interact*' would fail if it's not running on a tty/pty.
++
+If the spawned process exits when you're interacting with it then '*interact*'
+will exit with the same exit code of the spawned process and you don't need
+to call the '*wait*' sub-command any more.
+And the background server will also exit.
+
+The '*interact*' sub-command supports the following options:
+
+-lookback N | -lb N ::
+    Show the most recent last _N_ lines of output after attaching to the
+    process so you'd know where you were last time.
+
+=== wait (w)
+
+*sexpect wait* ::
+    The '*wait*' sub-command waits for the spawned process to complete and
+    return the spawned process' exit code.
+
+=== expect_out (expout, out)
+
+//
+// The SPACE between `<' and `-index' is required.
+//
+*sexpect expect_out* [< *-index* | *-i*> _INDEX_] ::
+    After the '*expect*' sub-command successfully matches the specified
+    _PATTERN_, you can use the '*expect_out*' sub-command to get substring
+    matches.
+    Up to *9* (*1-9*) RE substring matches are saved in the server side.
+    *0* refers to the string which matched the whole _PATTERN_.
+    _INDEX_ defaults to *0* if it's not specified.
++
+For example, if the command
+
+    sexpect expect -re 'a(bc)d(ef)g'
++
+succeeds (exits 0) then the following commands
+
+    sexpect expect_out -index 0
+    sexpect expect_out -index 1
+    sexpect expect_out -index 2
++
+would output *abcdefg*, *bc* and *ef*, respectively.
+
+=== chkerr (chk, ck)
+
+*sexpect chkerr* *-errno* _NUM_ *-is* _REASON_ ::
+
+    If the previous '*expect*' sub-command fails, the '*chkerr*' sub-command
+    can be used to check if the failure is caused by *EOF* or *TIMEOUT*.
++
+See the '*expect*' sub-command for an example.
+
+The '*chkerr*' sub-command supports the following options:
+
+-errno NUM | -err NUM ::
+    _NUM_ is the exit code of the previous failed '*expect*' sub-command.
+
+-is REASON ::
+    _REASON_ can be '*eof*', '*timeout*'.
+
+Exit status ::
+
+    *0* will be returned if the specified error _NUM_ is caused by the
+    _REASON_.
+    *1* will be returned if the specified error _NUM_ is *NOT* caused by the
+    _REASON_.
+
+=== close (c)
+
+*sexpect close* ::
+
+    The '*close*' sub-command closes the spawned process's pty by force.
+    This would usually cause the process to receive *SIGHUP* and be killed.
+
+=== kill (k)
+
+*sexpect kill* [-_SIGNAME_ | -_SIGNUM_] ::
+
+    The '*kill*' sub-command sends the specified signal to the spawned
+    process.
+    The default signal is *SIGTERM*.
+
+The '*kill*' sub-command supports the following options:
+
+-SIGNAME ::
+    Specify the signal with name.
+    Only the following signal names are supported:
+
+        SIGCONT SIGHUP  SIGINT  SIGKILL SIGQUIT
+        SIGSTOP SIGTERM SIGUSR1 SIGUSR2
++
+The _SIGNAME_ is case insensitive and the prefix '*SIG*' is optional.
+
+-SIGNUM ::
+    Specify the signal with number.
+
+=== set
+
+*sexpect set* [_OPTION_] ::
+
+    The '*set*' sub-command can be used to dynamically change server side's
+    parameters after '*spawn*'.
+
+The '*set*' sub-command supports the following options:
+
+-autowait FLAG | -nowait FLAG ::
+    _FLAG_ can be *0*, *1*, *on*, *off*.
++
+By default, after the spawned process exits, the server side will wait
+for the client to call 'wait' to get the exit status of the process and
+then the server will exit.
++
+When '*autowait*' is turned on, after the spawned process exits it'll
+be automatically waited and then the server will exit.
+
+-nonblock FLAG | -nb FLAG ::
+    _FLAG_ can be *0*, *1*, *on*, *off*.
++
+By default, the spawned process will be blocked if it outputs too much
+and the client (either '*expect*', '*interact*' or '*wait*') does not read
+the output in time.
++
+When '*nonblock*' is turned on, the output from the process will not be
+blocked so the process can continue running.
+
+-idle-close N | -idle N ::
+    Set the IDLE value.
+    See the '*spawn*' sub-command for details.
+
+-timeout N | -t N ::
+    See the '*spawn*' sub-command for details.
+
+-ttl N ::
+    See the '*spawn*' sub-command for details.
+
+=== get
+
+*sexpect get* [_OPTION_] ::
+
+    Retrieve server side information.
+
+The '*get*' sub-command supports the following options:
+
+-all | -a ::
+    Get all available information from server side.
+
+-autowait | -nowait ::
+    Get the '*autowait*' flag.
+
+-nonblock | -nb ::
+    Get the '*nonblock*' flag.
+
+-idle-close | -idle ::
+    Get the IDLE value. See '*spawn*' for details.
+
+-pid ::
+    Get the spawned process's PID.
+
+-ppid ::
+    Get the spawned process's PPID.
+
+-tty | -pty | -pts ::
+    Get the spawned process's tty.
+
+-timeout | -t ::
+    Get the current default timeout value.
+
+-ttl ::
+    Get the TTL value. See '*spawn*' for details.
+
+== ENVIRONMENT VARIABLES
+
+SEXPECT_SOCKFILE ::
+    See *GLOBAL OPTIONS* for details.
+
+== RESOURCES
+
+Project home: https://github.com/clarkwang/sexpect/
+
+Examples: https://github.com/clarkwang/sexpect/tree/master/examples/
+
+== SEE ALSO
+
+expect(1), pty(7), pts(4), glob(3), fnmatch(3)
+
+== AUTHOR
+
+Written by mailto:dearvoid@gmail.com[Clark Wang] .
+
+== REPORTING BUGS
+
+Report bugs to mailto:dearvoid@gmail.com[Clark Wang] or
+open an issue at https://github.com/clarkwang/sexpect/
