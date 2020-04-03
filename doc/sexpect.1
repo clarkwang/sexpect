@@ -2,12 +2,12 @@
 .\"     Title: sexpect
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: Asciidoctor 1.5.4
-.\"      Date: 2019-06-15
+.\"      Date: 2020-04-03
 .\"    Manual: sexpect manual
-.\"    Source: sexpect 2.2.2
+.\"    Source: sexpect 2.3.0
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2019-06-15" "sexpect 2.2.2" "sexpect manual"
+.TH "SEXPECT" "1" "2020-04-03" "sexpect 2.3.0" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -353,6 +353,11 @@ The \(aq\fBinteract\fP\(aq sub\-command supports the following options:
 .RS 4
 Show the most recent last \fIN\fP lines of output after attaching to the
 process so you\(cqd know where you were last time.
+.RE
+.sp
+\-nodetach | \-nodet
+.RS 4
+Disable \fBCTRL\-]\fP. This may be useful in scripts.
 .RE
 .SS "wait (w)"
 .sp

@@ -222,7 +222,7 @@ cli_loop(void)
                 debug("read(stdin) returned 0");
             } else {
                 /* press CTRL-] to detach */
-                if (nread == 1 && buf[0] == '\x1d') {
+                if ( ! cmdopts->pass.no_detach && nread == 1 && buf[0] == '\x1d') {
 #if 0
                     system("tput cnorm");
 #endif

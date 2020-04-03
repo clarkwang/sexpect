@@ -1,6 +1,6 @@
 = sexpect(1)
 :doctype: manpage
-:sexpect-version: 2.2.2
+:sexpect-version: 2.3.0
 :man manual: sexpect manual
 :man source: sexpect {sexpect-version}
 :page-layout: base
@@ -251,6 +251,9 @@ The '*interact*' sub-command supports the following options:
 -lookback N | -lb N ::
     Show the most recent last _N_ lines of output after attaching to the
     process so you'd know where you were last time.
+
+-nodetach | -nodet ::
+    Disable *CTRL-]*. This may be useful in scripts.
 
 === wait (w)
 

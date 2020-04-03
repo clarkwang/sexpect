@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.2.2";
+char * const VERSION_ = "2.3.0";
 
 static struct {
     char * progname;
@@ -91,6 +91,7 @@ interact (i)\n\
 \n\
     Options:\n\
         -lookback N | -lb N\n\
+        -nodetach | -nodet\n\
 \n\
 wait (w)\n\
 --------\n\
@@ -474,6 +475,8 @@ getargs(int argc, char **argv)
             if (str1of(arg, "-lookback", "-lb", NULL) ) {
                 next = nextarg(argv, "-lookback", & i);
                 g.cmdopts.pass.lookback = arg2uint(next);
+            } else if (str1of(arg, "-nodetach", "-nodet", "-nod", NULL) ) {
+                g.cmdopts.pass.no_detach = true;
             } else {
                 usage_err = true;
                 break;

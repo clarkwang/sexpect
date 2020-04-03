@@ -213,6 +213,7 @@ struct st_pass {
     int    subcmd;      /* expect, interact, wait */
     bool   no_input;    /* expect, wait */
     bool   has_timeout;
+    bool   no_detach;   /* interact: disable <ctrl-]> */
     int    timeout;     /* negative value means infinite */
     int    expflags;
     char * pattern;
