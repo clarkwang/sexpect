@@ -1177,7 +1177,7 @@ serv_main(struct st_cmdopts * cmdopts)
         }
 
         if (execvp(cmdopts->spawn.argv[0], cmdopts->spawn.argv) < 0) {
-            fatal_sys("exec(%s)", cmdopts->spawn.argv[0]);
+            fatal_sys("failed to spawn '%s'", cmdopts->spawn.argv[0]);
         }
     } else {
         /* This must be after exec() or the following usage would not work
