@@ -290,7 +290,7 @@ getargs(int argc, char **argv)
                 /* sub-commands */
             } else {
                 /* chkerr */
-                if (str1of(arg, "chkerr", "chk", "ck", "err", NULL) ) {
+                if (str1of(arg, "chkerr", "ckerr", "chk", "ck", "err", NULL) ) {
                     g.cmdopts.cmd = "chkerr";
                     g.cmdopts.chkerr.errcode = -1;
 
