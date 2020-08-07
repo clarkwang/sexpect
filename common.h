@@ -149,6 +149,7 @@ struct st_spawn {
 struct st_send {
     bool   cstring;
     bool   file;
+    bool   strip;
     bool   env;
     bool   enter;
 
@@ -251,6 +252,7 @@ struct v2n_map {
 char * v2n_error(int err, char *buf, size_t len);
 char * v2n_tag(int tag, char *buf, size_t len);
 char * strunesc(const char * in, char ** out_, int * len_);
+char * str_rstrip(char * s);
 char * glob2re(const char * in, char ** out_, int * len_);
 int    name2sig(const char * signame);
 void   common_init(void);

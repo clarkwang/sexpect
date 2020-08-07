@@ -330,6 +330,27 @@ strcasematch(const char *s, const char *pattern)
     return strmatch_ex(s, pattern, true);
 }
 
+char *
+str_rstrip(char *s)
+{
+    int len, i;
+
+    if (s == NULL || s[0] == 0) {
+        return s;
+    }
+
+    len = strlen(s);
+    for (i = len - 1; i >= 0; i--) {
+        if (isspace(s[i])) {
+            s[i] = 0;
+        } else {
+            return s;
+        }
+    }
+
+    return s;
+}
+
 /*
  * \\
  * \a \b \f \n \r \t \v (native C escapes)

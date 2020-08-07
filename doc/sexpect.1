@@ -4,10 +4,10 @@
 .\" Generator: Asciidoctor 1.5.4
 .\"      Date: 2020-08-07
 .\"    Manual: sexpect manual
-.\"    Source: sexpect 2.3.1
+.\"    Source: sexpect 2.3.2
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2020-08-07" "sexpect 2.3.1" "sexpect manual"
+.TH "SEXPECT" "1" "2020-08-07" "sexpect 2.3.2" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -333,11 +333,17 @@ spawned process.
 \-file FILE | \-f FILE
 .RS 4
 Send the content of the \fIFILE\fP to the spawned process.
+Use \(aq\fB\-strip\fP\(aq to remove trailing white space chars.
 .RE
 .sp
 \-env NAME | \-var NAME
 .RS 4
 Send the value of environment variable \fINAME\fP to the spawned process.
+.RE
+.sp
+\-strip
+.RS 4
+See option \(aq\fB\-file\fP\(aq.
 .RE
 .SS "interact (i)"
 .sp

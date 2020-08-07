@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.3.1";
+char * const VERSION_ = "2.3.2";
 
 static struct {
     char * progname;
@@ -85,6 +85,7 @@ send (s)\n\
         -enter | -cr\n\
         -file FILE | -f FILE\n\
         -env NAME | -var NAME\n\
+        -strip\n\
 \n\
 interact (i)\n\
 ------------\n\
@@ -506,6 +507,8 @@ getargs(int argc, char **argv)
                 st->cstring = true;
             } else if (str1of(arg, "-cr", "-enter", NULL) ) {
                 st->enter = true;
+            } else if (str1of(arg, "-strip", NULL) ) {
+                st->strip = true;
             } else if (str1of(arg, "-env", "-var", NULL) ) {
                 if (st->data != NULL) {
                     usage_err = true;
@@ -741,6 +744,10 @@ getargs(int argc, char **argv)
             fatal(ERROR_USAGE, "-cstring cannot be used with -file or -env");
         }
 
+        if (st->strip && ! st->file) {
+            fatal(ERROR_USAGE, "-strip can only be used with -file");
+        }
+
         if (st->data != NULL && st->cstring) {
             strunesc(st->data, & data, & st->len);
             if (data == NULL) {
@@ -748,6 +755,10 @@ getargs(int argc, char **argv)
             } else {
                 st->data = data;
             }
+        }
+
+        if (st->file && st->strip) {
+            str_rstrip(st->data);
         }
 
         if (st->len > PASS_MAX_SEND) {

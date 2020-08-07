@@ -1,6 +1,6 @@
 = sexpect(1)
 :doctype: manpage
-:sexpect-version: 2.3.1
+:sexpect-version: 2.3.2
 :man manual: sexpect manual
 :man source: sexpect {sexpect-version}
 :page-layout: base
@@ -234,9 +234,13 @@ Other supported escapes:
 
 -file FILE | -f FILE ::
     Send the content of the _FILE_ to the spawned process.
+    Use '*-strip*' to remove trailing white space chars.
 
 -env NAME | -var NAME ::
     Send the value of environment variable _NAME_ to the spawned process.
+
+-strip ::
+    See option '*-file*'.
 
 === interact (i)
 
