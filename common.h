@@ -22,6 +22,7 @@
 #define PASS_MAX_MSG    (64 * 1024)
 #define PASS_MAX_SEND   1024
 #define PASS_DEF_TMOUT  -1
+#define PASS_DEF_ZOMBIE_TTL  (30 * 60)  // 30 minutes
 
 enum {
     /* THE START */
@@ -93,6 +94,7 @@ enum {
     PTAG_NONBLOCK,
     PTAG_AUTOWAIT,
     PTAG_TTL,
+    PTAG_ZOMBIE_TTL,
     PTAG_IDLETIME,
     PTAG_LOGFILE,
     PTAG_LOGFILE_APPEND,
@@ -140,6 +142,7 @@ struct st_spawn {
     bool    append;
     int     ttl;
     int     idle;
+    int     zombie_ttl;
     struct timespec startime;
 };
 

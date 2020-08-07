@@ -2,12 +2,12 @@
 .\"     Title: sexpect
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: Asciidoctor 1.5.4
-.\"      Date: 2020-04-03
+.\"      Date: 2020-08-07
 .\"    Manual: sexpect manual
-.\"    Source: sexpect 2.3.0
+.\"    Source: sexpect 2.3.1
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2020-04-03" "sexpect 2.3.0" "sexpect manual"
+.TH "SEXPECT" "1" "2020-08-07" "sexpect 2.3.1" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -163,6 +163,14 @@ The default value is \fB\-1\fP.
 The background server process will close the PTY and exit \fIN\fP seconds
 after the process is spawned.
 Usually this would cause the process to receive \fBSIGHUP\fP and be killed.
+.RE
+.sp
+\-zombie\-ttl N | \-zttl N
+.RS 4
+When the spawned process closes the pty and exits, the server will wait
+at most \fIN\fP seconds and then exit. This helps avoid too many zombie
+processes running around.
+The default value is \fB1800\fP (30 minutes). Use \fB\-1\fP to disable this.
 .RE
 .sp
 Exit status:

@@ -1,6 +1,6 @@
 = sexpect(1)
 :doctype: manpage
-:sexpect-version: 2.3.0
+:sexpect-version: 2.3.1
 :man manual: sexpect manual
 :man source: sexpect {sexpect-version}
 :page-layout: base
@@ -120,6 +120,12 @@ The '*spawn*' sub-command supports the following options:
     The background server process will close the PTY and exit _N_ seconds
     after the process is spawned.
     Usually this would cause the process to receive *SIGHUP* and be killed.
+
+-zombie-ttl N | -zttl N::
+    When the spawned process closes the pty and exits, the server will wait
+    at most _N_ seconds and then exit. This helps avoid too many zombie
+    processes running around.
+    The default value is *1800* (30 minutes). Use *-1* to disable this.
 
 Exit status: ::
     *0* will be returned if the background server has successfully started.

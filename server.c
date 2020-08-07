@@ -420,6 +420,7 @@ serv_process_msg(void)
                 ptag_new_bool(PTAG_NONBLOCK,   g.cmdopts->spawn.nonblock),
                 ptag_new_int(PTAG_TTL,         g.cmdopts->spawn.ttl),
                 ptag_new_int(PTAG_IDLETIME,    g.cmdopts->spawn.idle),
+                ptag_new_int(PTAG_ZOMBIE_TTL,  g.cmdopts->spawn.zombie_ttl),
                 NULL);
             serv_msg_send( & msg_out, true);
 
@@ -895,6 +896,15 @@ serv_loop(void)
         if (spawn->autowait && g.SIGCHLDed && g.fd_ptm < 0 && g.conn.sock < 0) {
             debug("child exited, exiting too (-nowait)");
             break;
+        }
+
+        /* -zombie-ttl */
+        if (spawn->zombie_ttl >= 0 && g.SIGCHLDed && g.fd_ptm < 0 && g.conn.sock < 0) {
+            if (Clock_diff( & spawn->startime, NULL) > spawn->zombie_ttl) {
+                debug("the zombie's been alive for %d seconds. killing it now.",
+                      spawn->zombie_ttl);
+                break;
+            }
         }
 
         /* -ttl */

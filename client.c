@@ -307,6 +307,10 @@ cli_loop(void)
                     t = ptag_find_child(msg_in, PTAG_NONBLOCK);
                     printf("%s%d\n", get->get_all ? "  Nonblock: " : "", t->v_bool);
                 }
+
+                t = ptag_find_child(msg_in, PTAG_ZOMBIE_TTL);
+                printf("%s%d\n", get->get_all ? "Zombie TTL: " : "", t->v_int);
+
                 cli_disconn(0);
             } else if (msg_in->tag == PTAG_EXITED) {
                 int status = msg_in->v_int;

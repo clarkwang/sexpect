@@ -74,6 +74,7 @@ static struct v2n_map g_v2n_tag[] = {
     V2N_MAP(PTAG_WINCH),
     V2N_MAP(PTAG_WINSIZE_COL),
     V2N_MAP(PTAG_WINSIZE_ROW),
+    V2N_MAP(PTAG_ZOMBIE_TTL),
     { 0, NULL },
 };
 
