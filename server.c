@@ -462,8 +462,14 @@ serv_read_ptm(void)
         }
 
         if (nread <= 0) {
-            /* On Linux (and macOS?), read() would return -1 (EIO) after the
-             * pts is closed. */
+            /*
+             * - On Linux, read() would return -1 (EIO) after the pts is closed
+             *   (by all child processes).
+             * - On macOS, read() would return 0 (EOF) after the pts is closed.
+             *   Note that it does not wait for child processes to close the
+             *   pts. Only the parent process exiting would cause read() to
+             *   return 0.
+             */
             if (nread == 0) {
                 debug("read(ptm) returned 0 (EOF)");
             } else {
@@ -1205,7 +1211,8 @@ serv_main(struct st_cmdopts * cmdopts)
     if (1) {
         /*
          * On macOS, fcntl(O_NONBLOCK) may fail before the child opens the
-         * pts. So wait a while for the child to open the pts.
+         * pts. So wait a while (until pty/master becomes writable) for the
+         * child to open the pts.
          */
         fd_set writefds;
         struct timeval timeout;
