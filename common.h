@@ -44,66 +44,66 @@ enum {
 
 enum {
     /* THE START */
-    PTAG_START__ = 0,
+    TAG_START__ = 0,
 
     /*
      * c2s
      */
-    PTAG_PASS,          /* expect/interact/wait */
-    PTAG_WINCH,         /* SIGWINCH */
-    PTAG_SEND,          /* for `send' */
-    PTAG_INPUT,         /* for `interact' */
-    PTAG_EXPOUT,        /* expect_out */
-    PTAG_CLOSE,         /* close */
-    PTAG_KILL,          /* kill */
-    PTAG_SET,
+    TAG_PASS,           /* expect/interact/wait */
+    TAG_WINCH,          /* SIGWINCH */
+    TAG_SEND,           /* for `send' */
+    TAG_INPUT,          /* for `interact' */
+    TAG_EXPOUT,         /* expect_out */
+    TAG_CLOSE,          /* close */
+    TAG_KILL,           /* kill */
+    TAG_SET,
 
     /*
      * s2c
      */
-    PTAG_ACK,
-    PTAG_OUTPUT,                /* output from the child */
-    PTAG_MATCHED,               /* successful "expect" */
-    PTAG_EOF,                   /* EOF from child */
-    PTAG_EXITED,                /* child exited */
-    PTAG_ERROR,
-    PTAG_TIMED_OUT,             /* "expect" timed out */
-    PTAG_EXPOUT_TEXT,           /* $expect_out(N,string) */
+    TAG_ACK,
+    TAG_OUTPUT,                 /* output from the child */
+    TAG_MATCHED,                /* successful "expect" */
+    TAG_EOF,                    /* EOF from child */
+    TAG_EXITED,                 /* child exited */
+    TAG_ERROR,
+    TAG_TIMED_OUT,              /* "expect" timed out */
+    TAG_EXPOUT_TEXT,            /* $expect_out(N,string) */
 
     /*
      * bidir
      */
-    PTAG_INFO,          /* pid, pts_name */
-    PTAG_DISCONN,       /* disconnect gracefully */
-    PTAG_HELLO,
+    TAG_INFO,           /* pid, pts_name */
+    TAG_DISCONN,        /* disconnect gracefully */
+    TAG_HELLO,
 
     /*
      * sub-tags
      */
-    PTAG_EXP_FLAGS,     /* -exact, -re, -eof, ... */
-    PTAG_PATTERN,       /* the expected pattern */
-    PTAG_EXP_TIMEOUT,   /* expect -timeout <N> */
-    PTAG_ERROR_CODE,
-    PTAG_ERROR_MSG,
-    PTAG_WINSIZE_ROW,
-    PTAG_WINSIZE_COL,
-    PTAG_PID,
-    PTAG_PPID,
-    PTAG_PTSNAME,
-    PTAG_EXPOUT_INDEX,
-    PTAG_NONBLOCK,
-    PTAG_AUTOWAIT,
-    PTAG_TTL,
-    PTAG_ZOMBIE_TTL,
-    PTAG_IDLETIME,
-    PTAG_LOGFILE,
-    PTAG_LOGFILE_APPEND,
-    PTAG_NOHUP,
-    PTAG_LOOKBACK,
-    PTAG_PASS_SUBCMD,   /* expect, interact, wait */
+    TAG_EXP_FLAGS,      /* -exact, -re, -eof, ... */
+    TAG_PATTERN,        /* the expected pattern */
+    TAG_EXP_TIMEOUT,    /* expect -timeout <N> */
+    TAG_ERROR_CODE,
+    TAG_ERROR_MSG,
+    TAG_WINSIZE_ROW,
+    TAG_WINSIZE_COL,
+    TAG_PID,
+    TAG_PPID,
+    TAG_PTSNAME,
+    TAG_EXPOUT_INDEX,
+    TAG_NONBLOCK,
+    TAG_AUTOWAIT,
+    TAG_TTL,
+    TAG_ZOMBIE_TTL,
+    TAG_IDLETIME,
+    TAG_LOGFILE,
+    TAG_LOGFILE_APPEND,
+    TAG_NOHUP,
+    TAG_LOOKBACK,
+    TAG_PASS_SUBCMD,    /* expect, interact, wait */
 
     /* THE END */
-    PTAG_END__,
+    TAG_END__,
 };
 
 enum {
@@ -281,10 +281,10 @@ void fatal_sys(const char *fmt, ...);
 void sig_handle(int signo, void (*handler)(int) );
 int  sock_connect(char * sockpath);
 
-size_t   msg_size(ptag_t *msg);
-void     msg_free(ptag_t **msg);
-ptag_t * msg_recv(int fd);
-ssize_t  msg_send(int fd, ptag_t *msg);
+size_t   msg_size(ttlv_t *msg);
+void     msg_free(ttlv_t **msg);
+ttlv_t * msg_recv(int fd);
+ssize_t  msg_send(int fd, ttlv_t *msg);
 ssize_t  msg_hello(int fd);
 ssize_t  msg_disconn(int fd);
 

@@ -35,46 +35,46 @@ static struct v2n_map g_v2n_error[] = {
 };
 
 static struct v2n_map g_v2n_tag[] = {
-    V2N_MAP(PTAG_ACK),
-    V2N_MAP(PTAG_AUTOWAIT),
-    V2N_MAP(PTAG_CLOSE),
-    V2N_MAP(PTAG_DISCONN),
-    V2N_MAP(PTAG_EOF),
-    V2N_MAP(PTAG_ERROR),
-    V2N_MAP(PTAG_ERROR_CODE),
-    V2N_MAP(PTAG_ERROR_MSG),
-    V2N_MAP(PTAG_EXITED),
-    V2N_MAP(PTAG_EXPOUT),
-    V2N_MAP(PTAG_EXPOUT_INDEX),
-    V2N_MAP(PTAG_EXPOUT_TEXT),
-    V2N_MAP(PTAG_EXP_FLAGS),
-    V2N_MAP(PTAG_EXP_TIMEOUT),
-    V2N_MAP(PTAG_HELLO),
-    V2N_MAP(PTAG_IDLETIME),
-    V2N_MAP(PTAG_INFO),
-    V2N_MAP(PTAG_INPUT),
-    V2N_MAP(PTAG_KILL),
-    V2N_MAP(PTAG_LOGFILE),
-    V2N_MAP(PTAG_LOGFILE_APPEND),
-    V2N_MAP(PTAG_LOOKBACK),
-    V2N_MAP(PTAG_MATCHED),
-    V2N_MAP(PTAG_NOHUP),
-    V2N_MAP(PTAG_NONBLOCK),
-    V2N_MAP(PTAG_OUTPUT),
-    V2N_MAP(PTAG_PASS),
-    V2N_MAP(PTAG_PASS_SUBCMD),
-    V2N_MAP(PTAG_PATTERN),
-    V2N_MAP(PTAG_PID),
-    V2N_MAP(PTAG_PPID),
-    V2N_MAP(PTAG_PTSNAME),
-    V2N_MAP(PTAG_SEND),
-    V2N_MAP(PTAG_SET),
-    V2N_MAP(PTAG_TIMED_OUT),
-    V2N_MAP(PTAG_TTL),
-    V2N_MAP(PTAG_WINCH),
-    V2N_MAP(PTAG_WINSIZE_COL),
-    V2N_MAP(PTAG_WINSIZE_ROW),
-    V2N_MAP(PTAG_ZOMBIE_TTL),
+    V2N_MAP(TAG_ACK),
+    V2N_MAP(TAG_AUTOWAIT),
+    V2N_MAP(TAG_CLOSE),
+    V2N_MAP(TAG_DISCONN),
+    V2N_MAP(TAG_EOF),
+    V2N_MAP(TAG_ERROR),
+    V2N_MAP(TAG_ERROR_CODE),
+    V2N_MAP(TAG_ERROR_MSG),
+    V2N_MAP(TAG_EXITED),
+    V2N_MAP(TAG_EXPOUT),
+    V2N_MAP(TAG_EXPOUT_INDEX),
+    V2N_MAP(TAG_EXPOUT_TEXT),
+    V2N_MAP(TAG_EXP_FLAGS),
+    V2N_MAP(TAG_EXP_TIMEOUT),
+    V2N_MAP(TAG_HELLO),
+    V2N_MAP(TAG_IDLETIME),
+    V2N_MAP(TAG_INFO),
+    V2N_MAP(TAG_INPUT),
+    V2N_MAP(TAG_KILL),
+    V2N_MAP(TAG_LOGFILE),
+    V2N_MAP(TAG_LOGFILE_APPEND),
+    V2N_MAP(TAG_LOOKBACK),
+    V2N_MAP(TAG_MATCHED),
+    V2N_MAP(TAG_NOHUP),
+    V2N_MAP(TAG_NONBLOCK),
+    V2N_MAP(TAG_OUTPUT),
+    V2N_MAP(TAG_PASS),
+    V2N_MAP(TAG_PASS_SUBCMD),
+    V2N_MAP(TAG_PATTERN),
+    V2N_MAP(TAG_PID),
+    V2N_MAP(TAG_PPID),
+    V2N_MAP(TAG_PTSNAME),
+    V2N_MAP(TAG_SEND),
+    V2N_MAP(TAG_SET),
+    V2N_MAP(TAG_TIMED_OUT),
+    V2N_MAP(TAG_TTL),
+    V2N_MAP(TAG_WINCH),
+    V2N_MAP(TAG_WINSIZE_COL),
+    V2N_MAP(TAG_WINSIZE_ROW),
+    V2N_MAP(TAG_ZOMBIE_TTL),
     { 0, NULL },
 };
 
@@ -84,7 +84,7 @@ common_init(void)
     if (ARRAY_SIZE(g_v2n_error) != ERROR_END__ - ERROR_START__) {
         fatal(ERROR_GENERAL, "g_v2n_error is not complete");
     }
-    if (ARRAY_SIZE(g_v2n_tag) != PTAG_END__ - PTAG_START__) {
+    if (ARRAY_SIZE(g_v2n_tag) != TAG_END__ - TAG_START__) {
         fatal(ERROR_GENERAL, "g_v2n_tag is not complete");
     }
 }
@@ -844,22 +844,22 @@ sock_connect(char * sockpath)
 }
 
 size_t
-msg_size(ptag_t *msg)
+msg_size(ttlv_t *msg)
 {
-    return ptag_calc_size(msg);
+    return ttlv_calc_size(msg);
 }
 
 void
-msg_free(ptag_t **msg)
+msg_free(ttlv_t **msg)
 {
-    ptag_free(msg);
+    ttlv_free(msg);
 }
 
 /* RETURN:
  *   NULL: error
  *    ptr: The whole received message.
  */
-ptag_t *
+ttlv_t *
 msg_recv(int fd)
 {
     const int bufsize = PASS_MAX_MSG;
@@ -867,7 +867,7 @@ msg_recv(int fd)
     uint32_t taglen; /* not including the header */
     uint32_t magic;
     int ret;
-    ptag_t * msg = NULL;
+    ttlv_t * msg = NULL;
 
     if (buf == NULL) {
         buf = malloc(bufsize);
@@ -888,29 +888,29 @@ msg_recv(int fd)
         return NULL;
     }
 
-    ret = readn(fd, buf, PTAG_HDR_SIZE);
-    if (ret < PTAG_HDR_SIZE) {
-        error("header expected to be %d bytes but got %d", PTAG_HDR_SIZE, ret);
+    ret = readn(fd, buf, TAG_HDR_SIZE);
+    if (ret < TAG_HDR_SIZE) {
+        error("header expected to be %d bytes but got %d", TAG_HDR_SIZE, ret);
         return NULL;
     }
 
-    taglen = ROUND8(net_get32(buf + PTAG_HDR_LEN_OFFSET) );
-    if (taglen + PTAG_HDR_SIZE > bufsize) {
+    taglen = ROUND8(net_get32(buf + TAG_HDR_LEN_OFFSET) );
+    if (taglen + TAG_HDR_SIZE > bufsize) {
         error("message too big: %u > %d",
-              taglen + PTAG_HDR_SIZE, bufsize);
+              taglen + TAG_HDR_SIZE, bufsize);
         return NULL;
     }
 
-    ret = readn(fd, buf + PTAG_HDR_SIZE, taglen);
+    ret = readn(fd, buf + TAG_HDR_SIZE, taglen);
     if (ret < taglen) {
         error("tag.length is %d but got %d bytes", taglen, ret);
         return NULL;
     }
 
-    ret = ptag_decode(buf, PTAG_HDR_SIZE + taglen, & msg);
-    if (ret < PTAG_HDR_SIZE + taglen) {
+    ret = ttlv_decode(buf, TAG_HDR_SIZE + taglen, & msg);
+    if (ret < TAG_HDR_SIZE + taglen) {
         error("message is %d bytes but only decoded %d",
-            PTAG_HDR_SIZE + taglen, ret);
+            TAG_HDR_SIZE + taglen, ret);
         msg_free( & msg);
         return NULL;
     }
@@ -923,7 +923,7 @@ msg_recv(int fd)
  *  >0: The whole message has been sent.
  */
 ssize_t
-msg_send(int fd, ptag_t *msg)
+msg_send(int fd, ttlv_t *msg)
 {
     const int bufsize = PASS_MAX_MSG;
     static unsigned char * buf = NULL;
@@ -938,13 +938,13 @@ msg_send(int fd, ptag_t *msg)
         }
     }
 
-    size = ptag_calc_size(msg);
+    size = ttlv_calc_size(msg);
     if (size > bufsize) {
         error("message too large (%d bytes)", size);
         return -1;
     }
 
-    ret = ptag_encode(msg, buf, bufsize);
+    ret = ttlv_encode(msg, buf, bufsize);
     if (size != ret) {
         error("message is %d bytes but only encoded %d", size, ret);
         return -1;
@@ -971,9 +971,9 @@ ssize_t
 msg_hello(int fd)
 {
     int ret;
-    ptag_t * msg;
+    ttlv_t * msg;
 
-    msg = ptag_new_struct(PTAG_HELLO);
+    msg = ttlv_new_struct(TAG_HELLO);
     ret = msg_send(fd, msg);
     msg_free(&msg);
 
@@ -984,9 +984,9 @@ ssize_t
 msg_disconn(int fd)
 {
     int ret;
-    ptag_t * msg;
+    ttlv_t * msg;
 
-    msg = ptag_new_struct(PTAG_DISCONN);
+    msg = ttlv_new_struct(TAG_DISCONN);
     ret = msg_send(fd, msg);
     msg_free(&msg);
 

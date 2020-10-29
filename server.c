@@ -127,23 +127,23 @@ serv_sigCHLD(int signo)
     /* Don't close(fd_ptm) here! There may still data from pts for reading. */
 }
 
-static ptag_t *
+static ttlv_t *
 serv_new_error(int code, char * msg)
 {
-    ptag_t * error;
+    ttlv_t * error;
 
-    error = ptag_new_struct(PTAG_ERROR);
-    ptag_append_child(error,
-        ptag_new_int(PTAG_ERROR_CODE, code),
-        ptag_new_text(PTAG_ERROR_MSG, strlen(msg), msg),
+    error = ttlv_new_struct(TAG_ERROR);
+    ttlv_append_child(error,
+        ttlv_new_int(TAG_ERROR_CODE, code),
+        ttlv_new_text(TAG_ERROR_MSG, strlen(msg), msg),
         NULL);
     return error;
 }
 
-static ptag_t *
+static ttlv_t *
 serv_msg_recv(void)
 {
-    ptag_t *msg;
+    ttlv_t *msg;
 
     if (g.conn.sock >= 0) {
         msg = msg_recv(g.conn.sock);
@@ -161,7 +161,7 @@ serv_msg_recv(void)
 }
 
 static ssize_t
-serv_msg_send(ptag_t **msg, bool free_msg)
+serv_msg_send(ttlv_t **msg, bool free_msg)
 {
     int ret;
 
@@ -222,8 +222,8 @@ static void
 serv_process_msg(void)
 {
     char buf[1024];
-    ptag_t * msg_in = NULL;
-    ptag_t * msg_out = NULL;
+    ttlv_t * msg_in = NULL;
+    ttlv_t * msg_out = NULL;
 
     /* This _must_ be called before serv_msg_recv(), otherwise, for example, a
      * killed `sexpect expect -t N' would not update `g.lastactive'.
@@ -239,20 +239,20 @@ serv_process_msg(void)
 
     switch (msg_in->tag) {
 
-    case PTAG_HELLO:
+    case TAG_HELLO:
         debug("received HELLO");
         serv_hello();
 
         break;
 
-    case PTAG_DISCONN:
+    case TAG_DISCONN:
         debug("received DISCONN");
         serv_disconn();
 
         break;
 
-    case PTAG_SEND:
-    case PTAG_INPUT:
+    case TAG_SEND:
+    case TAG_INPUT:
         {
             if (g.fd_ptm >= 0) {
                 int nwritten = write(g.fd_ptm, msg_in->v_raw, msg_in->length);
@@ -262,41 +262,41 @@ serv_process_msg(void)
                     debug("write(ptm) returned %d (< %d)", nwritten, msg_in->length);
                 }
             }
-            if (msg_in->tag == PTAG_SEND) {
+            if (msg_in->tag == TAG_SEND) {
                 /* FIXME: send back data which are not written to the ptm */
-                msg_out = ptag_new_struct(PTAG_ACK);
+                msg_out = ttlv_new_struct(TAG_ACK);
                 serv_msg_send(&msg_out, true);
             }
 
             break;
         }
 
-    case PTAG_PASS:
+    case TAG_PASS:
         {
-            ptag_t * t;
+            ttlv_t * t;
 
             g.conn.passing = true;
 
-            t = ptag_find_child(msg_in, PTAG_PASS_SUBCMD);
+            t = ttlv_find_child(msg_in, TAG_PASS_SUBCMD);
             g.conn.pass.subcmd = t->v_int;
 
-            t = ptag_find_child(msg_in, PTAG_EXP_FLAGS);
+            t = ttlv_find_child(msg_in, TAG_EXP_FLAGS);
             g.conn.pass.expflags = t->v_int;
 
             /* expect with a pattern */
-            if ( (t = ptag_find_child(msg_in, PTAG_PATTERN) ) != NULL) {
+            if ( (t = ttlv_find_child(msg_in, TAG_PATTERN) ) != NULL) {
                 g.conn.pass.pattern = strdup( (char *) t->v_text);
             }
 
             /* expect -timeout */
-            if ( (t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT) ) != NULL) {
+            if ( (t = ttlv_find_child(msg_in, TAG_EXP_TIMEOUT) ) != NULL) {
                 g.conn.pass.timeout = t->v_int;
             } else {
                 g.conn.pass.timeout = g.cmdopts->spawn.def_timeout;
             }
 
             /* interact -lookback */
-            if ( (t = ptag_find_child(msg_in, PTAG_LOOKBACK) ) != NULL) {
+            if ( (t = ttlv_find_child(msg_in, TAG_LOOKBACK) ) != NULL) {
                 if (t->v_int > 0) {
                     g.conn.pass.lookback = t->v_int;
                 }
@@ -305,17 +305,17 @@ serv_process_msg(void)
             break;
         }
 
-    case PTAG_EXPOUT:
+    case TAG_EXPOUT:
         {
             int index = msg_in->v_int;
 
             if (index >= 0 && index < 10) {
                 if (g.expout[index] != NULL) {
-                    msg_out = ptag_new_text(PTAG_EXPOUT_TEXT,
+                    msg_out = ttlv_new_text(TAG_EXPOUT_TEXT,
                         strlen(g.expout[index]),
                         g.expout[index]);
                 } else {
-                    msg_out = ptag_new_text(PTAG_EXPOUT_TEXT, 0, "");
+                    msg_out = ttlv_new_text(TAG_EXPOUT_TEXT, 0, "");
                 }
             } else {
                 msg_out = serv_new_error(ERROR_USAGE, "index must in range 0-9");
@@ -325,17 +325,17 @@ serv_process_msg(void)
             break;
         }
 
-    case PTAG_WINCH:
+    case TAG_WINCH:
         {
             struct winsize size = { 0 };
-            ptag_t * row, * col;
+            ttlv_t * row, * col;
 
             if (g.fd_ptm < 0) {
                 break;
             }
 
-            row = ptag_find_child(msg_in, PTAG_WINSIZE_ROW);
-            col = ptag_find_child(msg_in, PTAG_WINSIZE_COL);
+            row = ttlv_find_child(msg_in, TAG_WINSIZE_ROW);
+            col = ttlv_find_child(msg_in, TAG_WINSIZE_COL);
 
             /* Don't resize if new_size is the same as old_size. */
             if (ioctl(g.fd_ptm, TIOCGWINSZ, &size) < 0) {
@@ -355,17 +355,17 @@ serv_process_msg(void)
             break;
         }
 
-    case PTAG_CLOSE:
+    case TAG_CLOSE:
         if (g.fd_ptm >= 0) {
             close(g.fd_ptm);
             g.fd_ptm = -1;
         }
-        msg_out = ptag_new_struct(PTAG_ACK);
+        msg_out = ttlv_new_struct(TAG_ACK);
         serv_msg_send(&msg_out, true);
 
         break;
 
-    case PTAG_KILL:
+    case TAG_KILL:
         {
             int signal = msg_in->v_int;
             if (kill(g.child, signal) < 0) {
@@ -373,54 +373,54 @@ serv_process_msg(void)
                 debug("%s", buf);
                 msg_out = serv_new_error(ERROR_SYS, buf);
             } else {
-                msg_out = ptag_new_struct(PTAG_ACK);
+                msg_out = ttlv_new_struct(TAG_ACK);
             }
             serv_msg_send(&msg_out, true);
 
             break;
         }
 
-    case PTAG_SET:
+    case TAG_SET:
         {
-            ptag_t * t;
+            ttlv_t * t;
 
-            if ( (t = ptag_find_child(msg_in, PTAG_AUTOWAIT) ) != NULL) {
+            if ( (t = ttlv_find_child(msg_in, TAG_AUTOWAIT) ) != NULL) {
                 g.cmdopts->spawn.autowait = t->v_bool;
             }
-            if ( (t = ptag_find_child(msg_in, PTAG_NONBLOCK) ) != NULL) {
+            if ( (t = ttlv_find_child(msg_in, TAG_NONBLOCK) ) != NULL) {
                 g.cmdopts->spawn.nonblock = t->v_bool;
             }
-            if ( (t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT) ) != NULL) {
+            if ( (t = ttlv_find_child(msg_in, TAG_EXP_TIMEOUT) ) != NULL) {
                 g.cmdopts->spawn.def_timeout = t->v_int;
             }
-            if ( (t = ptag_find_child(msg_in, PTAG_TTL) ) != NULL) {
+            if ( (t = ttlv_find_child(msg_in, TAG_TTL) ) != NULL) {
                 g.cmdopts->spawn.ttl = t->v_int;
             }
-            if ( (t = ptag_find_child(msg_in, PTAG_IDLETIME) ) != NULL) {
+            if ( (t = ttlv_find_child(msg_in, TAG_IDLETIME) ) != NULL) {
                 g.cmdopts->spawn.idle = t->v_int;
             }
 
-            msg_out = ptag_new_struct(PTAG_ACK);
+            msg_out = ttlv_new_struct(TAG_ACK);
             serv_msg_send(&msg_out, true);
 
             break;
         }
 
-    case PTAG_INFO:
+    case TAG_INFO:
         {
-            msg_out = ptag_new_struct(PTAG_INFO);
+            msg_out = ttlv_new_struct(TAG_INFO);
 
-            ptag_append_child(
+            ttlv_append_child(
                 msg_out,
-                ptag_new_int(PTAG_PID,  (int) g.child),
-                ptag_new_int(PTAG_PPID, (int) getpid() ),
-                ptag_new_text(PTAG_PTSNAME, strlen(g.ptsname), g.ptsname),
-                ptag_new_int(PTAG_EXP_TIMEOUT, g.cmdopts->spawn.def_timeout),
-                ptag_new_bool(PTAG_AUTOWAIT,   g.cmdopts->spawn.autowait),
-                ptag_new_bool(PTAG_NONBLOCK,   g.cmdopts->spawn.nonblock),
-                ptag_new_int(PTAG_TTL,         g.cmdopts->spawn.ttl),
-                ptag_new_int(PTAG_IDLETIME,    g.cmdopts->spawn.idle),
-                ptag_new_int(PTAG_ZOMBIE_TTL,  g.cmdopts->spawn.zombie_ttl),
+                ttlv_new_int(TAG_PID,  (int) g.child),
+                ttlv_new_int(TAG_PPID, (int) getpid() ),
+                ttlv_new_text(TAG_PTSNAME, strlen(g.ptsname), g.ptsname),
+                ttlv_new_int(TAG_EXP_TIMEOUT, g.cmdopts->spawn.def_timeout),
+                ttlv_new_bool(TAG_AUTOWAIT,   g.cmdopts->spawn.autowait),
+                ttlv_new_bool(TAG_NONBLOCK,   g.cmdopts->spawn.nonblock),
+                ttlv_new_int(TAG_TTL,         g.cmdopts->spawn.ttl),
+                ttlv_new_int(TAG_IDLETIME,    g.cmdopts->spawn.idle),
+                ttlv_new_int(TAG_ZOMBIE_TTL,  g.cmdopts->spawn.zombie_ttl),
                 NULL);
             serv_msg_send( & msg_out, true);
 
@@ -682,7 +682,7 @@ exp_timed_out(void)
 static void
 serv_pass(void)
 {
-    ptag_t * msg_out;
+    ttlv_t * msg_out;
     int exitstatus;
     int lookback, newlines, nsend;
     char * pc = NULL, * psend = NULL;
@@ -766,7 +766,7 @@ serv_pass(void)
 
     nsend = g.rawnew + g.newcnt - psend;
     if (nsend > 0) {
-        msg_out = ptag_new_raw(PTAG_OUTPUT, nsend, psend);
+        msg_out = ttlv_new_raw(TAG_OUTPUT, nsend, psend);
         if (serv_msg_send(&msg_out, true) < 0) {
             return;
         }
@@ -777,7 +777,7 @@ serv_pass(void)
 #else
     /* no -lookback support */
     if (g.newcnt > 0) {
-        msg_out = ptag_new_raw(PTAG_OUTPUT, g.newcnt, g.rawnew);
+        msg_out = ttlv_new_raw(TAG_OUTPUT, g.newcnt, g.rawnew);
         if (serv_msg_send(&msg_out, true) < 0) {
             return;
         }
@@ -797,7 +797,7 @@ serv_pass(void)
          & (PASS_EXPECT_EXACT | PASS_EXPECT_GLOB | PASS_EXPECT_ERE) ) != 0) {
 
         if (serv_expect() ) {
-            msg_out = ptag_new_bool(PTAG_MATCHED, 1);
+            msg_out = ttlv_new_bool(TAG_MATCHED, 1);
             serv_msg_send(&msg_out, true);
 
             g.conn.passing = false;
@@ -822,7 +822,7 @@ serv_pass(void)
             g.expoffset = g.ntotal;
             g.expcnt = 0;
 
-            msg_out = ptag_new_struct(PTAG_EOF);
+            msg_out = ttlv_new_struct(TAG_EOF);
             serv_msg_send(&msg_out, true);
 
             g.conn.passing = false;
@@ -833,7 +833,7 @@ serv_pass(void)
                 waitpid(g.child, &  exitstatus, 0);
                 g.waited = true;
 
-                msg_out = ptag_new_int(PTAG_EXITED, exitstatus);
+                msg_out = ttlv_new_int(TAG_EXITED, exitstatus);
                 serv_msg_send(&msg_out, true);
 
                 g.conn.passing = false;

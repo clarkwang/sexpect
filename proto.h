@@ -19,23 +19,23 @@
 #define net_put64(val, ptr)   *(uint64_t *)(ptr) = _htonll(val)
 
 /* tag + type + length */
-#define PTAG_HDR_SIZE       8
-#define PTAG_HDR_LEN_OFFSET 4
+#define TAG_HDR_SIZE       8
+#define TAG_HDR_LEN_OFFSET 4
 
 typedef enum {
-    PTYPE_INT    = 0x01, /* int32 */
-    PTYPE_LONG   = 0x02, /* int64 */
-    PTYPE_BOOL   = 0x03, /* int32 */
-    PTYPE_TEXT   = 0x04, /* NULL terminated string */
-    PTYPE_RAW    = 0x05, /* raw bytes */
-    PTYPE_STRUCT = 0x06, /* struct */
+    TTYPE_INT    = 0x01, /* int32 */
+    TTYPE_LONG   = 0x02, /* int64 */
+    TTYPE_BOOL   = 0x03, /* int32 */
+    TTYPE_TEXT   = 0x04, /* NULL terminated string */
+    TTYPE_RAW    = 0x05, /* raw bytes */
+    TTYPE_STRUCT = 0x06, /* struct */
 
-    PTYPE_END__,
-} ptag_type_t;
+    TTYPE_END__,
+} ttlv_type_t;
 
-typedef struct ptag {
-    struct ptag * child;
-    struct ptag * next;
+typedef struct ttlv {
+    struct ttlv * child;
+    struct ttlv * next;
 
     uint32_t    tag:24;
     uint32_t    type:8;
@@ -53,34 +53,34 @@ typedef struct ptag {
         uint8_t         v_raw[1];
         uint8_t         v_text[1];
     };
-} ptag_t;
+} ttlv_t;
 
 uint64_t _htonll(uint64_t n);
 uint64_t _ntohll(uint64_t n);
 
-bool    ptag_valid_len(uint32_t type, uint32_t length);
-bool    ptag_valid_pad(uint32_t type, uint32_t length, char *data);
-int     ptag_count_tags(ptag_t *head, uint32_t tag);
-int     ptag_encode(ptag_t * head, uint8_t * buf, uint32_t buf_len);
-int     ptag_decode(uint8_t * buf, uint32_t buf_len, ptag_t ** head);
-int     ptag_value_hton(ptag_t * head, uint8_t * buf, uint32_t buf_len);
-int     ptag_value_ntoh(ptag_t * head, uint8_t * buf, uint32_t buf_len);
-ptag_t  *ptag_append(ptag_t * head, ptag_t * p);
-ptag_t  *ptag_append_child(ptag_t * head, ... /* child, child, ... NULL */);
-ptag_t  *ptag_find_child(ptag_t *parent, uint32_t tag);
-ptag_t  *ptag_find_sibling(ptag_t *first, uint32_t tag);
+bool    ttlv_valid_len(uint32_t type, uint32_t length);
+bool    ttlv_valid_pad(uint32_t type, uint32_t length, char *data);
+int     ttlv_count_tags(ttlv_t *head, uint32_t tag);
+int     ttlv_encode(ttlv_t * head, uint8_t * buf, uint32_t buf_len);
+int     ttlv_decode(uint8_t * buf, uint32_t buf_len, ttlv_t ** head);
+int     ttlv_value_hton(ttlv_t * head, uint8_t * buf, uint32_t buf_len);
+int     ttlv_value_ntoh(ttlv_t * head, uint8_t * buf, uint32_t buf_len);
+ttlv_t  *ttlv_append(ttlv_t * head, ttlv_t * p);
+ttlv_t  *ttlv_append_child(ttlv_t * head, ... /* child, child, ... NULL */);
+ttlv_t  *ttlv_find_child(ttlv_t *parent, uint32_t tag);
+ttlv_t  *ttlv_find_sibling(ttlv_t *first, uint32_t tag);
 
-ptag_t  *ptag_new(uint32_t tag, ptag_type_t type, uint32_t length);
-ptag_t  *ptag_new_int(uint32_t tag, int32_t value);
-ptag_t  *ptag_new_long(uint32_t tag, int64_t value);
-ptag_t  *ptag_new_bool(uint32_t tag, uint32_t value);
-ptag_t  *ptag_new_text(uint32_t tag, uint32_t length, char *text);
-ptag_t  *ptag_new_raw(uint32_t tag, uint32_t length, char *text);
-ptag_t  *ptag_new_struct(uint32_t tag);
+ttlv_t  *ttlv_new(uint32_t tag, ttlv_type_t type, uint32_t length);
+ttlv_t  *ttlv_new_int(uint32_t tag, int32_t value);
+ttlv_t  *ttlv_new_long(uint32_t tag, int64_t value);
+ttlv_t  *ttlv_new_bool(uint32_t tag, uint32_t value);
+ttlv_t  *ttlv_new_text(uint32_t tag, uint32_t length, char *text);
+ttlv_t  *ttlv_new_raw(uint32_t tag, uint32_t length, char *text);
+ttlv_t  *ttlv_new_struct(uint32_t tag);
 
-void    ptag_free(ptag_t ** head);
+void    ttlv_free(ttlv_t ** head);
 
-int     ptag_calc_size_ex(ptag_t * head, bool cur_tag_only);
-#define ptag_calc_size(head)            ptag_calc_size_ex(head, false)
+int     ttlv_calc_size_ex(ttlv_t * head, bool cur_tag_only);
+#define ttlv_calc_size(head)            ttlv_calc_size_ex(head, false)
 
 #endif

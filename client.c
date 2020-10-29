@@ -40,17 +40,17 @@ cli_atexit(void)
 }
 
 static void
-cli_msg_send(ptag_t *msg)
+cli_msg_send(ttlv_t *msg)
 {
     if (msg_send(g.sock, msg) < 0) {
         fatal(ERROR_PROTO, "msg_send failed (server dead?)");
     }
 }
 
-static ptag_t *
+static ttlv_t *
 cli_msg_recv(void)
 {
-    ptag_t * msg;
+    ttlv_t * msg;
 
     msg = msg_recv(g.sock);
     if (msg == NULL) {
@@ -63,7 +63,7 @@ cli_msg_recv(void)
 static void
 cli_hello(void)
 {
-    ptag_t * msg = NULL;
+    ttlv_t * msg = NULL;
 
     debug("sending HELLO");
     if (msg_hello(g.sock) < 0) {
@@ -76,7 +76,7 @@ cli_hello(void)
         }
 
         msg = cli_msg_recv();
-        if (msg->tag == PTAG_HELLO) {
+        if (msg->tag == TAG_HELLO) {
             debug("received HELLO");
             break;
         } else {
@@ -89,7 +89,7 @@ cli_hello(void)
 static void
 cli_disconn(int exitcode)
 {
-    ptag_t * msg = NULL;
+    ttlv_t * msg = NULL;
 
     debug("sending DISCONN");
     if (msg_disconn(g.sock) < 0) {
@@ -103,12 +103,12 @@ cli_disconn(int exitcode)
         }
 
         msg = cli_msg_recv();
-        if (msg->tag == PTAG_DISCONN) {
+        if (msg->tag == TAG_DISCONN) {
             debug("received DISCONN, closing the socket");
             close(g.sock);
             g.sock = -1;
             break;
-        } else if (msg->tag == PTAG_OUTPUT) {
+        } else if (msg->tag == TAG_OUTPUT) {
             if (g.cmdopts->passing) {
                 debug("cli_disconn: received output");
                 write(STDOUT_FILENO, msg->v_raw, msg->length);
@@ -129,7 +129,7 @@ cli_disconn(int exitcode)
 static int
 cli_send_winsize(void)
 {
-    ptag_t * msg_out = NULL;
+    ttlv_t * msg_out = NULL;
     struct winsize size;
     static int ourtty = -1;
 
@@ -149,10 +149,10 @@ cli_send_winsize(void)
         return -1;
     }
 
-    msg_out = ptag_new_struct(PTAG_WINCH);
-    ptag_append_child(msg_out,
-                      ptag_new_int(PTAG_WINSIZE_ROW, size.ws_row),
-                      ptag_new_int(PTAG_WINSIZE_COL, size.ws_col),
+    msg_out = ttlv_new_struct(TAG_WINCH);
+    ttlv_append_child(msg_out,
+                      ttlv_new_int(TAG_WINSIZE_ROW, size.ws_row),
+                      ttlv_new_int(TAG_WINSIZE_COL, size.ws_col),
                       NULL);
     cli_msg_send(msg_out);
     msg_free(&msg_out);
@@ -168,8 +168,8 @@ cli_loop(void)
     fd_set readfds;
     int r, nread;
     int fd_max;
-    ptag_t * msg_out = NULL;
-    ptag_t * msg_in = NULL;
+    ttlv_t * msg_out = NULL;
+    ttlv_t * msg_in = NULL;
     struct st_cmdopts * cmdopts = g.cmdopts;
     struct timeval timeout;
 
@@ -229,7 +229,7 @@ cli_loop(void)
                     cli_disconn(0);
                 }
 
-                msg_out = ptag_new_text(PTAG_INPUT, nread, buf);
+                msg_out = ttlv_new_text(TAG_INPUT, nread, buf);
                 cli_msg_send(msg_out);
                 msg_free( & msg_out);
             }
@@ -243,26 +243,26 @@ cli_loop(void)
 
             msg_in = cli_msg_recv();
 
-            if (msg_in->tag == PTAG_ACK) {
+            if (msg_in->tag == TAG_ACK) {
                 cli_disconn(0);
-            } else if (msg_in->tag == PTAG_OUTPUT) {
+            } else if (msg_in->tag == TAG_OUTPUT) {
                 write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
-            } else if (msg_in->tag == PTAG_EXPOUT_TEXT) {
+            } else if (msg_in->tag == TAG_EXPOUT_TEXT) {
                 write(STDOUT_FILENO, msg_in->v_text, msg_in->length);
                 cli_disconn(0);
-            } else if (msg_in->tag == PTAG_MATCHED) {
+            } else if (msg_in->tag == TAG_MATCHED) {
                 debug("expect: MATCHED");
                 cli_disconn(0);
-            } else if (msg_in->tag == PTAG_EOF) {
+            } else if (msg_in->tag == TAG_EOF) {
                 debug("expect: EOF");
                 if ((cmdopts->pass.expflags & PASS_EXPECT_EOF) != 0) {
                     cli_disconn(0);
                 } else {
                     cli_disconn(ERROR_EOF);
                 }
-            } else if (msg_in->tag == PTAG_ERROR) {
-                ptag_t *errmsg = ptag_find_child(msg_in, PTAG_ERROR_MSG);
-                ptag_t *errcode = ptag_find_child(msg_in, PTAG_ERROR_CODE);
+            } else if (msg_in->tag == TAG_ERROR) {
+                ttlv_t *errmsg = ttlv_find_child(msg_in, TAG_ERROR_MSG);
+                ttlv_t *errcode = ttlv_find_child(msg_in, TAG_ERROR_CODE);
 
                 v2n_error(errcode->v_int, errname, sizeof(errname) );
                 debug("received ERROR: %s (%s)", errmsg->v_text, errname);
@@ -272,48 +272,48 @@ cli_loop(void)
                     cli_disconn(-1);
                     fatal(errcode->v_int, "%s (%s)", errmsg->v_text, errname);
                 }
-            } else if (msg_in->tag == PTAG_INFO) {
-                ptag_t * t;
+            } else if (msg_in->tag == TAG_INFO) {
+                ttlv_t * t;
                 struct st_get * get = & cmdopts->get;
                 if (get->get_all || get->get_tty) {
-                    t = ptag_find_child(msg_in, PTAG_PTSNAME);
+                    t = ttlv_find_child(msg_in, TAG_PTSNAME);
                     printf("%s%s\n", get->get_all ? "       TTY: " : "", t->v_text);
                 }
                 if (get->get_all || get->get_pid) {
-                    t = ptag_find_child(msg_in, PTAG_PID);
+                    t = ttlv_find_child(msg_in, TAG_PID);
                     printf("%s%d\n", get->get_all ? " Child PID: " : "", t->v_int);
                 }
                 if (get->get_all || get->get_ppid) {
-                    t = ptag_find_child(msg_in, PTAG_PPID);
+                    t = ttlv_find_child(msg_in, TAG_PPID);
                     printf("%s%d\n", get->get_all ? "Parent PID: " : "", t->v_int);
                 }
                 if (get->get_all || get->get_ttl) {
-                    t = ptag_find_child(msg_in, PTAG_TTL);
+                    t = ttlv_find_child(msg_in, TAG_TTL);
                     printf("%s%d\n", get->get_all ? "       TTL: " : "", t->v_int);
                 }
                 if (get->get_all || get->get_idle) {
-                    t = ptag_find_child(msg_in, PTAG_IDLETIME);
+                    t = ttlv_find_child(msg_in, TAG_IDLETIME);
                     printf("%s%d\n", get->get_all ? "      Idle: " : "", t->v_int);
                 }
                 if (get->get_all || get->get_timeout) {
-                    t = ptag_find_child(msg_in, PTAG_EXP_TIMEOUT);
+                    t = ttlv_find_child(msg_in, TAG_EXP_TIMEOUT);
                     printf("%s%d\n", get->get_all ? "   Timeout: " : "", t->v_int);
                 }
                 if (get->get_all || get->get_autowait) {
-                    t = ptag_find_child(msg_in, PTAG_AUTOWAIT);
+                    t = ttlv_find_child(msg_in, TAG_AUTOWAIT);
                     printf("%s%d\n", get->get_all ? "  Autowait: " : "", t->v_bool);
                 }
                 if (get->get_all || get->get_nonblock) {
-                    t = ptag_find_child(msg_in, PTAG_NONBLOCK);
+                    t = ttlv_find_child(msg_in, TAG_NONBLOCK);
                     printf("%s%d\n", get->get_all ? "  Nonblock: " : "", t->v_bool);
                 }
                 if (get->get_all) {
-                    t = ptag_find_child(msg_in, PTAG_ZOMBIE_TTL);
+                    t = ttlv_find_child(msg_in, TAG_ZOMBIE_TTL);
                     printf("%s%d\n", get->get_all ? "Zombie TTL: " : "", t->v_int);
                 }
 
                 cli_disconn(0);
-            } else if (msg_in->tag == PTAG_EXITED) {
+            } else if (msg_in->tag == TAG_EXITED) {
                 int status = msg_in->v_int;
                 int ret;
 
@@ -359,7 +359,7 @@ cli_chkerr(void)
 void
 cli_main(struct st_cmdopts * cmdopts)
 {
-    ptag_t * msg_out = NULL;
+    ttlv_t * msg_out = NULL;
     char * subcmd;
 
     g.cmdopts = cmdopts;
@@ -376,74 +376,74 @@ cli_main(struct st_cmdopts * cmdopts)
 
     /* close */
     if (streq(subcmd, "close") ) {
-        msg_out = ptag_new_struct(PTAG_CLOSE);
+        msg_out = ttlv_new_struct(TAG_CLOSE);
 
         /* expect_out */
     } else if (streq(subcmd, "expect_out") ) {
-        msg_out = ptag_new_int(PTAG_EXPOUT, cmdopts->expout.index);
+        msg_out = ttlv_new_int(TAG_EXPOUT, cmdopts->expout.index);
 
         /* get */
     } else if (streq(subcmd, "get") ) {
-        msg_out = ptag_new_struct(PTAG_INFO);
+        msg_out = ttlv_new_struct(TAG_INFO);
 
         /* kill */
     } else if (streq(subcmd, "kill") ) {
         if (cmdopts->kill.signal < 0) {
-            msg_out = ptag_new_int(PTAG_KILL, (int) SIGTERM);
+            msg_out = ttlv_new_int(TAG_KILL, (int) SIGTERM);
         } else {
-            msg_out = ptag_new_int(PTAG_KILL, cmdopts->kill.signal);
+            msg_out = ttlv_new_int(TAG_KILL, cmdopts->kill.signal);
         }
 
         /* send */
     } else if (streq(subcmd, "send") ) {
         if (cmdopts->send.enter) {
-            msg_out = ptag_new_raw(PTAG_SEND,
+            msg_out = ttlv_new_raw(TAG_SEND,
                 cmdopts->send.len + 1, cmdopts->send.data);
             msg_out->v_raw[cmdopts->send.len] = '\r';
         } else if (cmdopts->send.len > 0) {
             /* send even when the length is 0 or we'll block waiting for
              * the ACK */
-            msg_out = ptag_new_raw(PTAG_SEND,
+            msg_out = ttlv_new_raw(TAG_SEND,
                 cmdopts->send.len, cmdopts->send.data);
         }
 
         /* set */
     } else if (streq(subcmd, "set") ) {
-        msg_out = ptag_new_struct(PTAG_SET);
+        msg_out = ttlv_new_struct(TAG_SET);
 
         if (cmdopts->set.set_autowait) {
-            ptag_append_child(msg_out,
-                ptag_new_bool(PTAG_AUTOWAIT, cmdopts->set.autowait),
+            ttlv_append_child(msg_out,
+                ttlv_new_bool(TAG_AUTOWAIT, cmdopts->set.autowait),
                 NULL);
         }
         if (cmdopts->set.set_nonblock) {
-            ptag_append_child(msg_out,
-                ptag_new_bool(PTAG_NONBLOCK, cmdopts->set.nonblock),
+            ttlv_append_child(msg_out,
+                ttlv_new_bool(TAG_NONBLOCK, cmdopts->set.nonblock),
                 NULL);
         }
         if (cmdopts->set.set_timeout) {
-            ptag_append_child(msg_out,
-                ptag_new_int(PTAG_EXP_TIMEOUT, cmdopts->set.timeout),
+            ttlv_append_child(msg_out,
+                ttlv_new_int(TAG_EXP_TIMEOUT, cmdopts->set.timeout),
                 NULL);
         }
         if (cmdopts->set.set_ttl) {
-            ptag_append_child(msg_out,
-                ptag_new_int(PTAG_TTL, cmdopts->set.ttl),
+            ttlv_append_child(msg_out,
+                ttlv_new_int(TAG_TTL, cmdopts->set.ttl),
                 NULL);
         }
         if (cmdopts->set.set_idle) {
-            ptag_append_child(msg_out,
-                ptag_new_int(PTAG_IDLETIME, cmdopts->set.idle),
+            ttlv_append_child(msg_out,
+                ttlv_new_int(TAG_IDLETIME, cmdopts->set.idle),
                 NULL);
         }
 
         /* expect, interact, wait */
     } else if (cmdopts->passing) {
-        ptag_t * expflags;
-        ptag_t * pattern;
-        ptag_t * timeout;
-        ptag_t * lookback;
-        ptag_t * subcmd;
+        ttlv_t * expflags;
+        ttlv_t * pattern;
+        ttlv_t * timeout;
+        ttlv_t * lookback;
+        ttlv_t * subcmd;
 
         /* "expect" without a pattern */
         if (cmdopts->pass.expflags == 0) {
@@ -455,28 +455,28 @@ cli_main(struct st_cmdopts * cmdopts)
             fatal(ERROR_NOTTY, "stdin not a tty");
         }
 
-        msg_out = ptag_new_struct(PTAG_PASS);
+        msg_out = ttlv_new_struct(TAG_PASS);
 
-        subcmd = ptag_new_int(PTAG_PASS_SUBCMD, cmdopts->pass.subcmd);
-        ptag_append_child(msg_out, subcmd, NULL);
+        subcmd = ttlv_new_int(TAG_PASS_SUBCMD, cmdopts->pass.subcmd);
+        ttlv_append_child(msg_out, subcmd, NULL);
 
-        expflags = ptag_new_int(PTAG_EXP_FLAGS, cmdopts->pass.expflags);
-        ptag_append_child(msg_out, expflags, NULL);
+        expflags = ttlv_new_int(TAG_EXP_FLAGS, cmdopts->pass.expflags);
+        ttlv_append_child(msg_out, expflags, NULL);
 
         if (cmdopts->pass.has_timeout) {
-            timeout = ptag_new_int(PTAG_EXP_TIMEOUT, cmdopts->pass.timeout);
-            ptag_append_child(msg_out, timeout, NULL);
+            timeout = ttlv_new_int(TAG_EXP_TIMEOUT, cmdopts->pass.timeout);
+            ttlv_append_child(msg_out, timeout, NULL);
         }
 
         if (cmdopts->pass.pattern) {
-            pattern = ptag_new_text(PTAG_PATTERN,
+            pattern = ttlv_new_text(TAG_PATTERN,
                 strlen(cmdopts->pass.pattern), cmdopts->pass.pattern);
-            ptag_append_child(msg_out, pattern, NULL);
+            ttlv_append_child(msg_out, pattern, NULL);
         }
 
         if (cmdopts->pass.lookback > 0) {
-            lookback = ptag_new_int(PTAG_LOOKBACK, cmdopts->pass.lookback);
-            ptag_append_child(msg_out, lookback, NULL);
+            lookback = ttlv_new_int(TAG_LOOKBACK, cmdopts->pass.lookback);
+            ttlv_append_child(msg_out, lookback, NULL);
         }
 
         /* unknown */
