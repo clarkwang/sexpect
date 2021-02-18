@@ -420,7 +420,7 @@ serv_process_msg(void)
                 ttlv_new_bool(TAG_NONBLOCK,   g.cmdopts->spawn.nonblock),
                 ttlv_new_int(TAG_TTL,         g.cmdopts->spawn.ttl),
                 ttlv_new_int(TAG_IDLETIME,    g.cmdopts->spawn.idle),
-                ttlv_new_int(TAG_ZOMBIE_TTL,  g.cmdopts->spawn.zombie_ttl),
+                ttlv_new_int(TAG_ZOMBIE_TTL,  g.cmdopts->spawn.zombie_idle),
                 NULL);
             serv_msg_send( & msg_out, true);
 
@@ -904,11 +904,11 @@ serv_loop(void)
             break;
         }
 
-        /* -zombie-ttl */
-        if (spawn->zombie_ttl >= 0 && g.SIGCHLDed && g.fd_ptm < 0 && g.conn.sock < 0) {
-            if (Clock_diff( & spawn->startime, NULL) > spawn->zombie_ttl) {
-                debug("the zombie's been alive for %d seconds. killing it now.",
-                      spawn->zombie_ttl);
+        /* -zombie-idle */
+        if (spawn->zombie_idle > 0 && g.SIGCHLDed && g.fd_ptm < 0 && g.conn.sock < 0) {
+            if (Clock_diff( & g.lastactive, NULL) > spawn->zombie_idle) {
+                debug("the zombie's been idle for %d seconds. killing it now.",
+                      spawn->zombie_idle);
                 break;
             }
         }

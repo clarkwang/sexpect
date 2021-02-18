@@ -1,23 +1,32 @@
 '\" t
 .\"     Title: sexpect
-.\"    Author: [see the "AUTHORS" section]
-.\" Generator: Asciidoctor 1.5.4
-.\"      Date: 2020-08-07
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 1.5.8
+.\"      Date: 2021-02-18
 .\"    Manual: sexpect manual
 .\"    Source: sexpect 2.3.2
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2020-08-07" "sexpect 2.3.2" "sexpect manual"
+.TH "SEXPECT" "1" "2021-02-18" "sexpect 2.3.2" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
 .nh
 .ad l
 .de URL
-\\$2 \(laURL: \\$1 \(ra\\$3
+\fI\\$2\fP <\\$1>\\$3
 ..
-.if \n[.g] .mso www.tmac
-.LINKSTYLE blue R < >
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
 .SH "NAME"
 sexpect \- Expect for Shells
 .SH "SYNOPSIS"
@@ -65,17 +74,13 @@ You can save the \fISOCKFILE\fP in the \fBSEXPECT_SOCKFILE\fP environment variab
 you don\(cqt need to specify the \(aq\fB\-sock\fP\(aq option for each command.
 For example:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
 export SEXPECT_SOCKFILE=~/.sexpect\-bash.sock
 sexpect spawn bash \-\-norc
 \&... ...
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The socket file will be automatically created if it does not exist.
 .RE
@@ -165,10 +170,11 @@ after the process is spawned.
 Usually this would cause the process to receive \fBSIGHUP\fP and be killed.
 .RE
 .sp
-\-zombie\-ttl N | \-zttl N
+\-zombie\-idle N | \-z\-idle N
 .RS 4
-When the spawned process closes the pty and exits, the server will wait
-at most \fIN\fP seconds and then exit. This helps avoid too many zombie
+When the spawned process closes the pty and exits, if there are
+no client requests in the last \fIN\fP seconds the server will automatically
+wait the spawned process and then exit. This helps avoid too many zombie
 processes running around.
 The default value is \fB1800\fP (30 minutes). Use \fB\-1\fP to disable this.
 .RE
@@ -189,15 +195,11 @@ the output of the spawned process.
 If \fB\-eof\fP is specified, it\(cqll wait until \fBEOF\fP (end\-of\-file) is seen.
 If neither \fIPATTERN\fP nor \fB\-eof\fP is specified, then it defaults to
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
 expect \-timeout 0 \-re \(aq.*\(aq
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 The \(aq\fBexpect\fP\(aq sub\-command supports the following options:
@@ -259,9 +261,7 @@ If the command fails, the \(aq\fBchkerr\fP\(aq sub\-command can be used to check
 failure is caused by \fBEOF\fP or \fBTIMEOUT\fP.
 For example (in \fBBash\fP):
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
 sexpect expect \-re foobar
 ret=$?
@@ -275,9 +275,7 @@ else
     # Other errors
 fi
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .SS "send (s)"
 .sp
@@ -298,30 +296,22 @@ C language style backslash escapes would be recognized and replaced in
 .sp
 The following standard C language escapes are supported:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
 \(rs\(rs \(rsa \(rsb \(rsf \(rsn \(rsr \(rst \(rsv
 \(rsxHH \(rsxH
 \(rsooo \(rsoo \(rso
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 Other supported escapes:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
 \(rse \(rsE : ESC, the escape char.
 \(rscX   : CTRL\-X, e.g. \(rscc will be converted to the CTRL\-C char.
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .RE
 .sp
 \-enter | \-cr
@@ -393,29 +383,21 @@ Up to \fB9\fP (\fB1\-9\fP) RE substring matches are saved in the server side.
 .sp
 For example, if the command
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
 sexpect expect \-re \(aqa(bc)d(ef)g\(aq
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 succeeds (exits 0) then the following commands
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
 sexpect expect_out \-index 0
 sexpect expect_out \-index 1
 sexpect expect_out \-index 2
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 would output \fBabcdefg\fP, \fBbc\fP and \fBef\fP, respectively.
 .RE
@@ -471,16 +453,12 @@ The \(aq\fBkill\fP\(aq sub\-command supports the following options:
 Specify the signal with name.
 Only the following signal names are supported:
 .sp
-.if n \{\
-.RS 4
-.\}
+.if n .RS 4
 .nf
 SIGCONT SIGHUP  SIGINT  SIGKILL SIGQUIT
 SIGSTOP SIGTERM SIGUSR1 SIGUSR2
 .fi
-.if n \{\
-.RE
-.\}
+.if n .RE
 .sp
 The \fISIGNAME\fP is case insensitive and the prefix \(aq\fBSIG\fP\(aq is optional.
 .RE

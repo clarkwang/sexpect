@@ -142,7 +142,7 @@ struct st_spawn {
     bool    append;
     int     ttl;
     int     idle;
-    int     zombie_ttl;
+    int     zombie_idle;
     struct timespec startime;
 };
 

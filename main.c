@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.3.3";
+char * const VERSION_ = "2.3.4";
 
 static struct {
     char * progname;
@@ -60,7 +60,7 @@ spawn (sp, fork)\n\
         -term TERM | -T TERM\n\
         -timeout N | -t N\n\
         -ttl N\n\
-        -zombie-ttl N | -zttl N\n\
+        -zombie-idle N | -z-idle N\n\
 \n\
 expect (exp, ex, x)\n\
 -------------------\n\
@@ -344,7 +344,7 @@ getargs(int argc, char **argv)
                 } else if (str1of(arg, "spawn", "sp", "fork", NULL) ) {
                     g.cmdopts.cmd = "spawn";
                     g.cmdopts.spawn.def_timeout = PASS_DEF_TMOUT;
-                    g.cmdopts.spawn.zombie_ttl = PASS_DEF_ZOMBIE_TTL;
+                    g.cmdopts.spawn.zombie_idle = PASS_DEF_ZOMBIE_TTL;
                     g.cmdopts.spawn.logfd = -1;
 
                     /* wait */
@@ -653,8 +653,10 @@ getargs(int argc, char **argv)
                 st->logfile = nextarg(argv, arg, & i);
             } else if (str1of(arg, "-append", NULL) ) {
                 st->append = true;
-            } else if (str1of(arg, "-zombie-ttl", "-zombie", "-zttl", NULL) ) {
-                st->zombie_ttl = arg2int(nextarg(argv, arg, & i) );
+            } else if (str1of(arg, "-zombie-idle", "-z-idle",
+                              /* DEPRECATED. It really does not mean TTL. */
+                              "-zombie-ttl", "-zttl", NULL) ) {
+                st->zombie_idle = arg2int(nextarg(argv, arg, & i) );
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown spawn option: %s", arg);
             } else {
