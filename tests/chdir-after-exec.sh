@@ -16,7 +16,12 @@ tmpfile=chdir-after-exec.tmp.xYcyTm
 negass_run ls -l $tmpfile
 assert_run touch $tmpfile
 
-assert_run sexpect sp -t 10 -ttl 20 bash -c "sleep 1; ls -l chdir*.tmp.*; rm -f chdir*.tmp.*"
+#
+# For bash-5.1.4 there seems to be some race condition here. Without trapping
+# SIGHUP bash will be killed with SIGHUP and `sexpect w' would fail.
+#
+assert_run sexpect sp -t 10 -ttl 20 bash -c "trap '' HUP; sleep 1; ls -l *.xYcyTm; rm -f *.xYcyTm"
 assert_run sexpect ex $tmpfile
+assert_run sexpect ex -eof
 assert_run sexpect ex -eof
 assert_run sexpect w

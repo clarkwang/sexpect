@@ -49,9 +49,17 @@ assert_run sexpect sp -discard -ttl 5 od -v /dev/zero
 run sleep 1
 pid=$( sexpect get -pid )
 info "pid=$pid"
-st=$( ps -p $pid -o stat | sed -n 2p )
-info "st=$st"
-assert '[[ $st == R* ]]'
+#
+# There's some race condition here. The pty/master side may be not reading
+# od's output quickly enough so at some time od may be in sleeping state.
+#
+for i in {1..100}; do
+    st=$( ps -p $pid -o stat | sed -n 2p )
+    info "st=$st"
+    if [[ $st == R* ]]; then
+        break
+    fi
+done
 
 assert_run sexpect set -discard 0
 run sleep 1

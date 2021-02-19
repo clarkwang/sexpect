@@ -61,9 +61,8 @@ foreach(t
         kill
         spawn-discard
         spawn-nohup
-        spawn-nowait
+        spawn-zombie-idle
         still-data-after-exit
-        still-open-after-exit
        ) 
     addtest(${t})
     set_tests_properties(
@@ -71,3 +70,16 @@ foreach(t
         DEPENDS spawn-ttl
     )
 endforeach()
+
+if (CMAKE_SYSTEM MATCHES "Linux.*")
+    foreach(t
+            spawn-nowait
+            still-open-after-exit
+           )
+        addtest(${t})
+        set_tests_properties(
+            ${t} PROPERTIES
+            DEPENDS spawn-ttl
+        )
+    endforeach()
+endif()
