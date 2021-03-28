@@ -144,6 +144,7 @@ struct st_spawn {
     int     idle;
     int     zombie_idle;
     struct timespec startime;
+    struct timespec exittime;
 };
 
 struct st_send {

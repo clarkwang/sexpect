@@ -124,6 +124,8 @@ serv_sigCHLD(int signo)
 {
     g.SIGCHLDed = true;
 
+    Clock_gettime( & g.cmdopts->spawn.exittime);
+
     /* Don't close(fd_ptm) here! There may still data from pts for reading. */
 }
 
@@ -906,7 +908,8 @@ serv_loop(void)
 
         /* -zombie-idle */
         if (spawn->zombie_idle > 0 && g.SIGCHLDed && g.fd_ptm < 0 && g.conn.sock < 0) {
-            if (Clock_diff( & g.lastactive, NULL) > spawn->zombie_idle) {
+            if (Clock_diff( & g.lastactive, NULL) > spawn->zombie_idle
+                && Clock_diff( & spawn->exittime, NULL) > spawn->zombie_idle) {
                 debug("the zombie's been idle for %d seconds. killing it now.",
                       spawn->zombie_idle);
                 break;

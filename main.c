@@ -17,7 +17,7 @@
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.3.4";
+char * const VERSION_ = "2.3.5";
 
 static struct {
     char * progname;

@@ -309,7 +309,7 @@ cli_loop(void)
                 }
                 if (get->get_all) {
                     t = ttlv_find_child(msg_in, TAG_ZOMBIE_TTL);
-                    printf("%s%d\n", get->get_all ? "Zombie TTL: " : "", t->v_int);
+                    printf("%s%d\n", get->get_all ? "ZombieIdle: " : "", t->v_int);
                 }
 
                 cli_disconn(0);
