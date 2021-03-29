@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This is to verify v2.3.5
+# https://github.com/clarkwang/sexpect/issues/18
 
 source $SRCDIR/tests/common.sh || exit 1
 
