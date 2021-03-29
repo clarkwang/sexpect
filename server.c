@@ -65,8 +65,8 @@ static struct {
 
     /*
      * This will be updated when
-     *  1) The server receives requests from client
-     *  2) The server receives data from the spawned process
+     *  1) The server receives requests (including HELLO, DISCONN) from client.
+     *  2) The connection is broken unexpectedly (e.g. when the client is killed).
      *
      * The initial value is the time when the process is spawned.
      */
