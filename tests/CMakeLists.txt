@@ -62,6 +62,7 @@ foreach(t
         spawn-discard
         spawn-nohup
         spawn-zombie-idle
+        spawn-zombie-idle_02
         still-data-after-exit
        ) 
     addtest(${t})
