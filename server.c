@@ -85,6 +85,13 @@ static struct {
     int    expcnt;      /* current data in `expbuf' */
     char * expout[10];  /* $expect_out(N,string) */
 } g;
+#define is_CONNECTED    (g.conn.sock >= 0)
+#define not_CONNECTED   ( ! is_CONNECTED)
+#define is_PTM_OPEN     (g.fd_ptm    >= 0)
+#define not_PTM_OPEN    ( ! is_PTM_OPEN)
+#define is_CHLD_DEAD    (g.SIGCHLDed)
+#define is_CHLD_WAITED  (g.waited)
+#define is_PASSING      (g.conn.passing)
 
 static void
 daemonize(void)
@@ -147,12 +154,13 @@ serv_msg_recv(void)
 {
     ttlv_t *msg;
 
-    if (g.conn.sock >= 0) {
+    if (is_CONNECTED) {
         msg = msg_recv(g.conn.sock);
         if (msg == NULL) {
             debug("msg_recv failed (client dead?), closing the socket");
             close(g.conn.sock);
             g.conn.sock = -1;
+            Clock_gettime( & g.lastactive);
             return NULL;
         } else {
             return msg;
@@ -167,7 +175,7 @@ serv_msg_send(ttlv_t **msg, bool free_msg)
 {
     int ret;
 
-    if (g.conn.sock < 0) {
+    if (not_CONNECTED) {
         bug("msg_send: connection already closed");
         errno = EBADF;
         return -1;
@@ -178,6 +186,7 @@ serv_msg_send(ttlv_t **msg, bool free_msg)
         debug("msg_send failed (client dead?), closing the socket");
         close(g.conn.sock);
         g.conn.sock = -1;
+        Clock_gettime( & g.lastactive);
     }
 
     if (free_msg) {
@@ -190,7 +199,7 @@ serv_msg_send(ttlv_t **msg, bool free_msg)
 static void
 serv_hello(void)
 {
-    if (g.conn.sock < 0) {
+    if (not_CONNECTED) {
         return;
     }
 
@@ -199,13 +208,14 @@ serv_hello(void)
         debug("msg_hello failed (client dead?)");
         close(g.conn.sock);
         g.conn.sock = -1;
+        Clock_gettime( & g.lastactive);
     }
 }
 
 static void
 serv_disconn(void)
 {
-    if (g.conn.sock < 0) {
+    if (not_CONNECTED) {
         return;
     }
 
@@ -218,6 +228,8 @@ serv_disconn(void)
     debug("closing the socket");
     close(g.conn.sock);
     g.conn.sock = -1;
+
+    Clock_gettime( & g.lastactive);
 }
 
 static void
@@ -256,7 +268,7 @@ serv_process_msg(void)
     case TAG_SEND:
     case TAG_INPUT:
         {
-            if (g.fd_ptm >= 0) {
+            if (is_PTM_OPEN) {
                 int nwritten = write(g.fd_ptm, msg_in->v_raw, msg_in->length);
                 if (nwritten < 0) {
                     debug("write(ptm): %s (%d)", strerror(errno), errno);
@@ -332,7 +344,7 @@ serv_process_msg(void)
             struct winsize size = { 0 };
             ttlv_t * row, * col;
 
-            if (g.fd_ptm < 0) {
+            if (not_PTM_OPEN) {
                 break;
             }
 
@@ -358,7 +370,7 @@ serv_process_msg(void)
         }
 
     case TAG_CLOSE:
-        if (g.fd_ptm >= 0) {
+        if (is_PTM_OPEN) {
             close(g.fd_ptm);
             g.fd_ptm = -1;
         }
@@ -454,12 +466,6 @@ serv_read_ptm(void)
         nread = read(g.fd_ptm, g.rawnew + g.newcnt,
                      g.rawbufsize - (g.newcnt + oldcnt) );
         if (nread > 0) {
-            /*
-             * It turned out this behavior is _not_ quite useful.
-             */
-#if 0
-            Clock_gettime( & g.lastactive);
-#endif
             break;
         }
 
@@ -649,7 +655,7 @@ expect_ere(void)
 static bool
 serv_expect(void)
 {
-    if (g.expcnt == 0 && g.fd_ptm < 0) {
+    if (g.expcnt == 0 && not_PTM_OPEN) {
         /* ptm is closed and there's no data in expect buf */
         return false;
     }
@@ -690,7 +696,7 @@ serv_pass(void)
     char * pc = NULL, * psend = NULL;
 
     /* expect/interact/wait */
-    if (g.conn.sock < 0 || ! g.conn.passing) {
+    if (not_CONNECTED || ! is_PASSING) {
         return;
     }
 
@@ -817,7 +823,7 @@ serv_pass(void)
     /* Having received SIGCHLD does not necessarily mean EOF. There may still
      * data from the child for reading. So only report EOF when fd_ptm < 0.
      */
-    if (g.fd_ptm < 0 && g.expoffset >= g.ntotal) {
+    if (not_PTM_OPEN && g.expoffset >= g.ntotal) {
         if ((g.conn.pass.expflags & PASS_EXPECT_EOF) != 0) {
             /* [<] expect -eof */
 
@@ -831,7 +837,7 @@ serv_pass(void)
         } else if ( (g.conn.pass.expflags & PASS_EXPECT_EXIT) != 0) {
             /* [<] interact, wait */
 
-            if ( ! g.waited && g.SIGCHLDed) {
+            if ( ! is_CHLD_WAITED && is_CHLD_DEAD) {
                 waitpid(g.child, &  exitstatus, 0);
                 g.waited = true;
 
@@ -887,9 +893,9 @@ serv_loop(void)
      *  - After the child exits and ptm is closed, there may still some data
      *    in "rawbuf" which has not been copied to "expbuf" for "expect".
      */
-    while (! g.waited || g.conn.sock >= 0) {
+    while ( ! is_CHLD_WAITED || is_CONNECTED) {
         /* -cloexit */
-        if (spawn->cloexit && g.SIGCHLDed && g.fd_ptm >= 0) {
+        if (spawn->cloexit && is_CHLD_DEAD && is_PTM_OPEN) {
             /* [<] The child has exited but the pty is still open which
              *     means the child's children are still opening the pty. */
             static int n = 0;
@@ -901,13 +907,15 @@ serv_loop(void)
         }
 
         /* -nowait */
-        if (spawn->autowait && g.SIGCHLDed && g.fd_ptm < 0 && g.conn.sock < 0) {
+        if (spawn->autowait
+            && is_CHLD_DEAD && not_PTM_OPEN && not_CONNECTED) {
             debug("child exited, exiting too (-nowait)");
             break;
         }
 
         /* -zombie-idle */
-        if (spawn->zombie_idle > 0 && g.SIGCHLDed && g.fd_ptm < 0 && g.conn.sock < 0) {
+        if (spawn->zombie_idle > 0
+            && is_CHLD_DEAD && not_PTM_OPEN && not_CONNECTED) {
             if (Clock_diff( & g.lastactive, NULL) > spawn->zombie_idle
                 && Clock_diff( & spawn->exittime, NULL) > spawn->zombie_idle) {
                 debug("the zombie's been idle for %d seconds. killing it now.",
@@ -917,7 +925,7 @@ serv_loop(void)
         }
 
         /* -ttl */
-        if (spawn->ttl > 0 && g.conn.sock < 0) {
+        if (spawn->ttl > 0 && not_CONNECTED) {
             if (Clock_diff( & spawn->startime, NULL) > spawn->ttl) {
                 debug("server has been alive for TTL (=%d) seconds, bye",
                       spawn->ttl);
@@ -926,7 +934,7 @@ serv_loop(void)
         }
 
         /* -idle */
-        if (spawn->idle > 0 && g.conn.sock < 0) {
+        if (spawn->idle > 0 && not_CONNECTED) {
             if (Clock_diff( & g.lastactive, NULL) > spawn->idle) {
                 debug("server has been IDLE for %d seconds, bye", spawn->idle);
                 break;
@@ -937,7 +945,7 @@ serv_loop(void)
         fd_max = 0;
 
         /* listen to new connections */
-        if (g.conn.sock < 0) {
+        if (not_CONNECTED) {
             FD_SET(g.fd_listen, & readfds);
             if (g.fd_listen > fd_max) {
                 fd_max = g.fd_listen;
@@ -945,7 +953,7 @@ serv_loop(void)
         }
 
         /* read from ptm */
-        if (g.fd_ptm >= 0) {
+        if (is_PTM_OPEN) {
             /* [>] This checking is very important or the server may use 100%
              *     CPU. (example: sexpect sp hexdump /dev/urandom) */
             if (g.rawnew + g.newcnt < g.rawbuf + g.rawbufsize) {
@@ -957,7 +965,7 @@ serv_loop(void)
         }
 
         /* wait for client requests */
-        if (g.conn.sock >= 0) {
+        if (is_CONNECTED) {
             FD_SET(g.conn.sock, & readfds);
             if (g.conn.sock > fd_max) {
                 fd_max = g.conn.sock;
@@ -988,7 +996,7 @@ serv_loop(void)
                     fatal_sys("accept");
                 }
             } else {
-                if (g.conn.sock >= 0) {
+                if (is_CONNECTED) {
                     bug("old conn still alive!");
                     close(g.conn.sock);
                 }
@@ -1000,13 +1008,13 @@ serv_loop(void)
         }
 
         /* new data from pty */
-        if (g.fd_ptm >= 0) {
+        if (is_PTM_OPEN) {
             if (FD_ISSET(g.fd_ptm, & readfds) ) {
                 serv_read_ptm();
             }
         }
         /* -nonblock is ON */
-        if (spawn->nonblock && g.conn.sock < 0) {
+        if (spawn->nonblock && not_CONNECTED) {
             /* mark "new" data as "old" when -nonblock is ON */
             if (g.newcnt > 0) {
                 g.rawnew += g.newcnt;
@@ -1023,12 +1031,12 @@ serv_loop(void)
         }
 
         /* new message from client */
-        if (g.conn.sock >= 0 && FD_ISSET(g.conn.sock, & readfds) ) {
+        if (is_CONNECTED && FD_ISSET(g.conn.sock, & readfds) ) {
             serv_process_msg();
         }
 
         /* expect/interact/wait */
-        if (g.conn.sock >= 0 && g.conn.passing) {
+        if (is_CONNECTED && is_PASSING) {
             serv_pass();
         }
 
