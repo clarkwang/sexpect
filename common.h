@@ -22,7 +22,7 @@
 #define PASS_MAX_MSG    (64 * 1024)
 #define PASS_MAX_SEND   1024
 #define PASS_DEF_TMOUT  -1
-#define PASS_DEF_ZOMBIE_TTL  (30 * 60)  // 30 minutes
+#define PASS_DEF_ZOMBIE_TTL  (24 * 60 * 60)  // 24 hours
 
 enum {
     /* THE START */

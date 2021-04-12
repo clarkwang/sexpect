@@ -914,7 +914,7 @@ serv_loop(void)
         }
 
         /* -zombie-idle */
-        if (spawn->zombie_idle > 0
+        if (spawn->zombie_idle >= 0
             && is_CHLD_DEAD && not_PTM_OPEN && not_CONNECTED) {
             if (Clock_diff( & g.lastactive, NULL) > spawn->zombie_idle
                 && Clock_diff( & spawn->exittime, NULL) > spawn->zombie_idle) {

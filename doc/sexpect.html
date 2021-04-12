@@ -597,13 +597,13 @@ The default value is <strong>-1</strong>.</p>
 after the process is spawned.
 Usually this would cause the process to receive <strong>SIGHUP</strong> and be killed.</p>
 </dd>
-<dt class="hdlist1">-zombie-idle N | -z-idle N</dt>
+<dt class="hdlist1">-zombie-idle N | -z N</dt>
 <dd>
 <p>When the spawned process closes the pty and exits, if there are
 no client requests in the last <em>N</em> seconds the server will automatically
 wait the spawned process and then exit. This helps avoid too many zombie
 processes running around.
-The default value is <strong>1800</strong> (30 minutes). Use <strong>-1</strong> to disable this.</p>
+The default value is <strong>86400</strong> (24 hours). Use <strong>-1</strong> to disable this.</p>
 </dd>
 <dt class="hdlist1">Exit status: </dt>
 <dd>
@@ -1109,7 +1109,7 @@ open an issue at <a href="https://github.com/clarkwang/sexpect/" class="bare">ht
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-02-18 20:24:15 +0800
+Last updated 2021-04-12 11:12:59 +0800
 </div>
 </div>
 </body>

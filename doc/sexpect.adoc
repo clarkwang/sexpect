@@ -121,12 +121,12 @@ The '*spawn*' sub-command supports the following options:
     after the process is spawned.
     Usually this would cause the process to receive *SIGHUP* and be killed.
 
--zombie-idle N | -z-idle N::
+-zombie-idle N | -z N::
     When the spawned process closes the pty and exits, if there are
     no client requests in the last _N_ seconds the server will automatically
     wait the spawned process and then exit. This helps avoid too many zombie
     processes running around.
-    The default value is *1800* (30 minutes). Use *-1* to disable this.
+    The default value is *86400* (24 hours). Use *-1* to disable this.
 
 Exit status: ::
     *0* will be returned if the background server has successfully started.

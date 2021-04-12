@@ -2,12 +2,12 @@
 .\"     Title: sexpect
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 1.5.8
-.\"      Date: 2021-02-18
+.\"      Date: 2021-04-12
 .\"    Manual: sexpect manual
 .\"    Source: sexpect 2.3.4
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2021-02-18" "sexpect 2.3.4" "sexpect manual"
+.TH "SEXPECT" "1" "2021-04-12" "sexpect 2.3.4" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -170,13 +170,13 @@ after the process is spawned.
 Usually this would cause the process to receive \fBSIGHUP\fP and be killed.
 .RE
 .sp
-\-zombie\-idle N | \-z\-idle N
+\-zombie\-idle N | \-z N
 .RS 4
 When the spawned process closes the pty and exits, if there are
 no client requests in the last \fIN\fP seconds the server will automatically
 wait the spawned process and then exit. This helps avoid too many zombie
 processes running around.
-The default value is \fB1800\fP (30 minutes). Use \fB\-1\fP to disable this.
+The default value is \fB86400\fP (24 hours). Use \fB\-1\fP to disable this.
 .RE
 .sp
 Exit status:

@@ -60,7 +60,7 @@ spawn (sp, fork)\n\
         -term TERM | -T TERM\n\
         -timeout N | -t N\n\
         -ttl N\n\
-        -zombie-idle N | -z-idle N\n\
+        -zombie-idle N | -z N\n\
 \n\
 expect (exp, ex, x)\n\
 -------------------\n\
@@ -653,7 +653,7 @@ getargs(int argc, char **argv)
                 st->logfile = nextarg(argv, arg, & i);
             } else if (str1of(arg, "-append", NULL) ) {
                 st->append = true;
-            } else if (str1of(arg, "-zombie-idle", "-z-idle",
+            } else if (str1of(arg, "-zombie-idle", "-z-idle", "-z",
                               /* DEPRECATED. It really does not mean TTL. */
                               "-zombie-ttl", "-zttl", NULL) ) {
                 st->zombie_idle = arg2int(nextarg(argv, arg, & i) );
