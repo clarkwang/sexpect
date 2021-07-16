@@ -5,9 +5,10 @@ if (CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR)
     message(FATAL_ERROR "In-source build not allowed!")
 endif()
 
-project(pass C)
+project(sexpect C)
 
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_COLOR_MAKEFILE ON)
 
 if (CMAKE_COMPILER_IS_GNUCC)
@@ -23,3 +24,12 @@ endif()
 
 enable_testing()
 add_subdirectory(tests)
+
+install(TARGETS sexpect
+       #CONFIGURATIONS Release
+        RUNTIME
+        DESTINATION bin
+)
+install(FILES doc/sexpect.1
+        DESTINATION share/man/man1
+)
