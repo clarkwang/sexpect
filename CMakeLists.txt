@@ -11,6 +11,10 @@ project(sexpect C)
 #set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_COLOR_MAKEFILE ON)
 
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "CMAKE_BUILD_TYPE" FORCE)
+endif()
+
 if (CMAKE_COMPILER_IS_GNUCC)
     add_definitions(-Wall)
 endif()
