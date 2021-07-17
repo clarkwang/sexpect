@@ -14,18 +14,19 @@ running in background. You can *attach* to and *detach* from it as needed.
 
 # How to build
 
-## The *Make* Way
+Sexpect uses [CMake](https://cmake.org/) for building.
 
+    $ cd /path/to/cloned/sexpect/
+    $ mkdir build
+    $ cd build
+    $ cmake ..
     $ make
-    $ cp ./sexpect /usr/bin/
-    $ /usr/bin/sexpect -help
-
-## The [*CMake*](https://cmake.org/) Way
-
-    $ mkdir build; cd build; cmake ..; make
-    $ cp ./sexpect /usr/bin/
-    $ /usr/bin/sexpect -help
+    $ make install
     
+By default it will install to `/usr/local/` and `sexpect` will be installed to `/usr/local/bin/`. To change the installation location, run `cmake` like this:
+
+    $ cmake -D CMAKE_INSTALL_PREFIX=/opt/sexpect  ..
+
 ## Supported platforms                                                                
                                                                                       
 Tested on:                                                                            
