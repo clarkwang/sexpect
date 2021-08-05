@@ -1,6 +1,6 @@
 = sexpect(1)
 :doctype: manpage
-:sexpect-version: 2.3.4
+:sexpect-version: 2.3.7
 :man manual: sexpect manual
 :man source: sexpect {sexpect-version}
 :page-layout: base
@@ -265,6 +265,21 @@ The '*interact*' sub-command supports the following options:
 
 -nodetach | -nodet ::
     Disable *CTRL-]*. This may be useful in scripts.
+
+-re PATTERN ::
+    Automatically detach from the spawned process when the output matches
+    the RE pattern.
+    After a successful match, you can use '*expect_out*' to get substring
+    matches.
+
+-cstring | -cstr | -c ::
+    Used with '*-re PATTERN*'.
+    C style backslash escapes would be recognized and replaced in _PATTERN_.
+    See sub-command '*send*' for the list of supported backslash escapes.
+
+-nocase | -icase | -i ::
+    Used with '*-re PATTERN*'.
+    Ignore case when matching _PATTERN_.
 
 === wait (w)
 

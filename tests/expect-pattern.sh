@@ -8,6 +8,32 @@ assert_run sexpect sp -t 10 -ttl 20 bash --norc
 re_ps1='bash-[.0-9]+[$#] $'
 assert_run sexpect ex -re "$re_ps1"
 
+if (( 1 )); then
+    # expect -ex
+    assert_run sexpect s -cr 'echo {a..z} | sed "s/ //g" '
+    assert_run sexpect ex abc
+    for c in {d..z}; do
+        assert_run sexpect ex $c
+    done
+    assert_run sexpect ex -re "$re_ps1"
+
+    # expect -glob
+    assert_run sexpect s -cr 'echo {a..z} | sed "s/ //g" '
+    assert_run sexpect ex -gl '[a][b][c]'
+    for c in {d..z}; do
+        assert_run sexpect ex -gl "[$c]"
+    done
+    assert_run sexpect ex -re "$re_ps1"
+
+    # expect -re
+    assert_run sexpect s -cr 'echo {a..z} | sed "s/ //g" '
+    assert_run sexpect ex -re '[abc][b][c]'
+    for c in {d..z}; do
+        assert_run sexpect ex -re "[$c]"
+    done
+    assert_run sexpect ex -re "$re_ps1"
+fi
+
 # NULs removed for pattern matching
 assert_run sexpect s -cr 'printf "foo\0\0\0\0bar\n" '
 assert_run sexpect ex foobar

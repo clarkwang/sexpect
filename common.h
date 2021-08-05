@@ -24,6 +24,20 @@
 #define PASS_DEF_TMOUT  -1
 #define PASS_DEF_ZOMBIE_TTL  (24 * 60 * 60)  // 24 hours
 
+#define CMD_CHKERR    "chkerr"
+#define CMD_CLOSE     "close"
+#define CMD_EXPECT    "expect"
+#define CMD_EXPOUT    "expect_out"
+#define CMD_GET       "get"
+#define CMD_HELP      "help"
+#define CMD_INTERACT  "interact"
+#define CMD_KILL      "kill"
+#define CMD_SEND      "send"
+#define CMD_SET       "set"
+#define CMD_SPAWN     "spawn"
+#define CMD_VERSION   "version"
+#define CMD_WAIT      "wait"
+
 enum {
     /* THE START */
     ERROR_START__ = 200,
@@ -37,6 +51,7 @@ enum {
     ERROR_TIMEOUT,
     ERROR_EXITED,
     ERROR_INTERNAL,
+    ERROR_DETACH,
 
     /* THE END */
     ERROR_END__,
@@ -263,6 +278,7 @@ double Clock_diff(struct timespec * t1, struct timespec * t2);
 int  count1bits(unsigned n);
 bool str1of(const char *s, ... /* , NULL */);
 bool strmatch(const char *s, const char *ere);
+bool strmatch_ex(const char *s, const char *ere, bool icase);
 bool strcasematch(const char *s, const char *ere);
 void debug_on(void);
 

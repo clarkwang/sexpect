@@ -27,6 +27,7 @@
 
 #define SIZE_RAW_BUF    (16 * 1024)
 #define MAX_OLD_DATA    ( 8 * 1024)
+#define EXPECT_OUT_NUM  (9 + 1)
 
 #if (SIZE_RAW_BUF + 1024) > PASS_MAX_MSG
 #error "SIZE_RAW_BUF too large compared to PASS_MAX_MSG"
@@ -83,7 +84,7 @@ static struct {
     char * expbuf;      /* NULL bytes removed */
     int    expbufsize;
     int    expcnt;      /* current data in `expbuf' */
-    char * expout[10];  /* $expect_out(N,string) */
+    char * expout[EXPECT_OUT_NUM]; /* $expect_out(N,string) */
 } g;
 #define is_CONNECTED    (g.conn.sock >= 0)
 #define not_CONNECTED   ( ! is_CONNECTED)
@@ -92,6 +93,10 @@ static struct {
 #define is_CHLD_DEAD    (g.SIGCHLDed)
 #define is_CHLD_WAITED  (g.waited)
 #define is_PASSING      (g.conn.passing)
+#define is_EXPECT       (g.conn.pass.subcmd == PASS_SUBCMD_EXPECT)
+#define is_WAIT         (g.conn.pass.subcmd == PASS_SUBCMD_WAIT)
+#define is_INTERACT     (g.conn.pass.subcmd == PASS_SUBCMD_INTERACT)
+#define has_PATTERN     (g.conn.pass.pattern != NULL)
 
 static void
 daemonize(void)
@@ -124,6 +129,17 @@ daemonize(void)
 #if 0
     chdir("/");
 #endif
+}
+
+static void
+free_expect_out(void)
+{
+    int i;
+
+    for (i = 0; i < EXPECT_OUT_NUM; ++i) {
+        free(g.expout[i]);
+        g.expout[i] = NULL;
+    }
 }
 
 static void
@@ -287,7 +303,7 @@ serv_process_msg(void)
 
     case TAG_PASS:
         {
-            ttlv_t * t;
+            ttlv_t * t = NULL;
 
             g.conn.passing = true;
 
@@ -297,9 +313,11 @@ serv_process_msg(void)
             t = ttlv_find_child(msg_in, TAG_EXP_FLAGS);
             g.conn.pass.expflags = t->v_int;
 
-            /* expect with a pattern */
+            /* {expect|interact} with a pattern */
             if ( (t = ttlv_find_child(msg_in, TAG_PATTERN) ) != NULL) {
                 g.conn.pass.pattern = strdup( (char *) t->v_text);
+
+                free_expect_out();
             }
 
             /* expect -timeout */
@@ -309,7 +327,7 @@ serv_process_msg(void)
                 g.conn.pass.timeout = g.cmdopts->spawn.def_timeout;
             }
 
-            /* interact -lookback */
+            /* {interact|expect} -lookback */
             if ( (t = ttlv_find_child(msg_in, TAG_LOOKBACK) ) != NULL) {
                 if (t->v_int > 0) {
                     g.conn.pass.lookback = t->v_int;
@@ -323,7 +341,7 @@ serv_process_msg(void)
         {
             int index = msg_in->v_int;
 
-            if (index >= 0 && index < 10) {
+            if (index >= 0 && index < EXPECT_OUT_NUM) {
                 if (g.expout[index] != NULL) {
                     msg_out = ttlv_new_text(TAG_EXPOUT_TEXT,
                         strlen(g.expout[index]),
@@ -566,7 +584,6 @@ static bool
 expect_exact(void)
 {
     int pattern_len;
-    int i;
     char * found;
 
     if ((g.conn.pass.expflags & PASS_EXPECT_ICASE) != 0) {
@@ -580,12 +597,7 @@ expect_exact(void)
         memmove(g.expbuf, found + pattern_len, g.expcnt);
         g.expbuf[g.expcnt] = '\0';
 
-        /* $expect_out(0,string) */
-        for (i = 0; i < 10; ++i) {
-            /* free old $expect_out */
-            free(g.expout[i]);
-            g.expout[i] = NULL;
-        }
+        free_expect_out();
         g.expout[0] = strdup(g.conn.pass.pattern);
 
         return true;
@@ -597,6 +609,7 @@ expect_exact(void)
 static bool
 expect_glob(void)
 {
+    bug("server side should never see PASS_EXPECT_GLOB");
     return false;
 }
 
@@ -604,7 +617,7 @@ static bool
 expect_ere(void)
 {
     regex_t re;
-    regmatch_t matches[10];
+    regmatch_t matches[EXPECT_OUT_NUM];
     int reflags = REG_EXTENDED;
     int i, ret, len;
     bool nosub = false;
@@ -621,7 +634,7 @@ expect_ere(void)
         return false;
     }
 
-    ret = regexec( & re, g.expbuf, 10, matches, 0);
+    ret = regexec( & re, g.expbuf, EXPECT_OUT_NUM, matches, 0);
     regfree( & re);
     if (ret != 0) {
         return false;
@@ -629,11 +642,9 @@ expect_ere(void)
 
     /* $expect_out(N,string) */
     if ( ! nosub) {
-        for (i = 0; i < 10; ++i) {
-            /* free old $expect_out */
-            free(g.expout[i]);
-            g.expout[i] = NULL;
+        free_expect_out();
 
+        for (i = 0; i < EXPECT_OUT_NUM; ++i) {
             if (matches[i].rm_so == -1) {
                 continue;
             }
@@ -795,15 +806,14 @@ serv_pass(void)
     }
 #endif
 
-    if (g.conn.pass.subcmd == PASS_SUBCMD_EXPECT) {
+    /* "expect" or "interact -re" */
+    if (has_PATTERN) {
         /* copy data from raw buf to expect buf */
         buf_raw2expect();
     }
 
-    /* "expect" with a pattern */
-    if ((g.conn.pass.expflags \
-         & (PASS_EXPECT_EXACT | PASS_EXPECT_GLOB | PASS_EXPECT_ERE) ) != 0) {
-
+    /* "expect" or "interact" with a pattern */
+    if (has_PATTERN) {
         if (serv_expect() ) {
             msg_out = ttlv_new_bool(TAG_MATCHED, 1);
             serv_msg_send(&msg_out, true);
@@ -814,16 +824,15 @@ serv_pass(void)
         }
 
         /* interact, wait */
-    } else if (g.conn.pass.subcmd == PASS_SUBCMD_INTERACT 
-               || g.conn.pass.subcmd == PASS_SUBCMD_WAIT) {
-        g.expoffset = g.ntotal;
+    } else if (is_INTERACT || is_WAIT) {
+        g.expoffset = g.ntotal - g.newcnt;
         g.expcnt = 0;
     }
 
     /* Having received SIGCHLD does not necessarily mean EOF. There may still
      * data from the child for reading. So only report EOF when fd_ptm < 0.
      */
-    if (not_PTM_OPEN && g.expoffset >= g.ntotal) {
+    if (not_PTM_OPEN && g.newcnt == 0) {
         if ((g.conn.pass.expflags & PASS_EXPECT_EOF) != 0) {
             /* [<] expect -eof */
 
@@ -868,6 +877,17 @@ serv_pass(void)
 
         return;
     }
+}
+
+static void
+serv_cleanup_conn(void)
+{
+    if (g.conn.pass.pattern != NULL) {
+        free(g.conn.pass.pattern);
+    }
+
+    memset( & g.conn, 0, sizeof(g.conn) );
+    g.conn.sock = -1;
 }
 
 static void
@@ -1001,7 +1021,7 @@ serv_loop(void)
                     close(g.conn.sock);
                 }
                 debug("new client connected");
-                memset( & g.conn, 0, sizeof(g.conn) );
+                serv_cleanup_conn();
                 g.conn.sock = newconn;
                 Clock_gettime( & g.conn.pass.startime);
             }

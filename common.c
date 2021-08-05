@@ -22,6 +22,7 @@ static struct {
 } g;
 
 static struct v2n_map g_v2n_error[] = {
+    V2N_MAP(ERROR_DETACH),
     V2N_MAP(ERROR_EOF),
     V2N_MAP(ERROR_EXITED),
     V2N_MAP(ERROR_GENERAL),
@@ -297,7 +298,7 @@ str1of(const char *s, ...)
     return found;
 }
 
-static bool
+bool
 strmatch_ex(const char *s, const char *pattern, bool icase)
 {
     regex_t re;

@@ -175,7 +175,7 @@ cli_loop(void)
 
     while (true) {
         /* SIGWINCH */
-        if (g.received_winch && streq(cmdopts->cmd, "interact") ) {
+        if (g.received_winch && streq(cmdopts->cmd, CMD_INTERACT) ) {
             g.received_winch = false;
             cli_send_winsize();
         }
@@ -190,7 +190,7 @@ cli_loop(void)
             }
         }
 
-        if (streq(cmdopts->cmd, "interact") ) {
+        if (streq(cmdopts->cmd, CMD_INTERACT) ) {
             FD_SET(STDIN_FILENO, &readfds);
             if (STDIN_FILENO > fd_max) {
                 fd_max = STDIN_FILENO;
@@ -226,7 +226,7 @@ cli_loop(void)
 #if 0
                     system("tput cnorm");
 #endif
-                    cli_disconn(0);
+                    cli_disconn(ERROR_DETACH);
                 }
 
                 msg_out = ttlv_new_text(TAG_INPUT, nread, buf);
@@ -365,7 +365,7 @@ cli_main(struct st_cmdopts * cmdopts)
     g.cmdopts = cmdopts;
     subcmd = cmdopts->cmd;
 
-    if (streq(subcmd, "chkerr") ) {
+    if (streq(subcmd, CMD_CHKERR) ) {
         cli_chkerr();
         return;
     }
@@ -375,19 +375,19 @@ cli_main(struct st_cmdopts * cmdopts)
     g.stdin_is_tty = isatty(STDIN_FILENO);
 
     /* close */
-    if (streq(subcmd, "close") ) {
+    if (streq(subcmd, CMD_CLOSE) ) {
         msg_out = ttlv_new_struct(TAG_CLOSE);
 
         /* expect_out */
-    } else if (streq(subcmd, "expect_out") ) {
+    } else if (streq(subcmd, CMD_EXPOUT) ) {
         msg_out = ttlv_new_int(TAG_EXPOUT, cmdopts->expout.index);
 
         /* get */
-    } else if (streq(subcmd, "get") ) {
+    } else if (streq(subcmd, CMD_GET) ) {
         msg_out = ttlv_new_struct(TAG_INFO);
 
         /* kill */
-    } else if (streq(subcmd, "kill") ) {
+    } else if (streq(subcmd, CMD_KILL) ) {
         if (cmdopts->kill.signal < 0) {
             msg_out = ttlv_new_int(TAG_KILL, (int) SIGTERM);
         } else {
@@ -395,7 +395,7 @@ cli_main(struct st_cmdopts * cmdopts)
         }
 
         /* send */
-    } else if (streq(subcmd, "send") ) {
+    } else if (streq(subcmd, CMD_SEND) ) {
         if (cmdopts->send.enter) {
             msg_out = ttlv_new_raw(TAG_SEND,
                 cmdopts->send.len + 1, cmdopts->send.data);
@@ -408,7 +408,7 @@ cli_main(struct st_cmdopts * cmdopts)
         }
 
         /* set */
-    } else if (streq(subcmd, "set") ) {
+    } else if (streq(subcmd, CMD_SET) ) {
         msg_out = ttlv_new_struct(TAG_SET);
 
         if (cmdopts->set.set_autowait) {
@@ -446,7 +446,8 @@ cli_main(struct st_cmdopts * cmdopts)
         ttlv_t * subcmd;
 
         /* "expect" without a pattern */
-        if (cmdopts->pass.expflags == 0) {
+        if (cmdopts->pass.subcmd == PASS_SUBCMD_EXPECT
+                && cmdopts->pass.expflags == 0) {
             cmdopts->pass.expflags = PASS_EXPECT_ERE;
             cmdopts->pass.pattern = ".*";
         }
@@ -468,7 +469,7 @@ cli_main(struct st_cmdopts * cmdopts)
             ttlv_append_child(msg_out, timeout, NULL);
         }
 
-        if (cmdopts->pass.pattern) {
+        if (cmdopts->pass.pattern != NULL) {
             pattern = ttlv_new_text(TAG_PATTERN,
                 strlen(cmdopts->pass.pattern), cmdopts->pass.pattern);
             ttlv_append_child(msg_out, pattern, NULL);
@@ -500,7 +501,7 @@ cli_main(struct st_cmdopts * cmdopts)
     cli_hello();
 
     /* raw mode for "interact" */
-    if (streq(cmdopts->cmd, "interact") ) {
+    if (streq(cmdopts->cmd, CMD_INTERACT) ) {
         /* user's tty to raw mode */
         if (tty_raw(STDIN_FILENO, &g.saved_termios) < 0)
             fatal_sys("tty_raw");
@@ -517,7 +518,7 @@ cli_main(struct st_cmdopts * cmdopts)
     cli_msg_send(msg_out);
     msg_free(&msg_out);
 
-    if (streq(cmdopts->cmd, "interact") ) {
+    if (streq(cmdopts->cmd, CMD_INTERACT) ) {
         cli_send_winsize();
     }
 
