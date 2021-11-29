@@ -992,8 +992,13 @@ serv_loop(void)
             }
         }
 
+        /* With select(timeout=10ms), on my macOS 11.6 Big Sur (32GB mem), a
+         * background sexpect for "ssh -D" (with or without "-v") uses 0.4% CPU
+         * which is unnecessarily _high_. Tried timeout=100ms and the CPU usage
+         * dropped to 0%. Seems like it's good enough to use a 100ms+ timeout.
+         */
         timeout.tv_sec = 0;
-        timeout.tv_usec = 10 * 1000;
+        timeout.tv_usec = 200 * 1000;
         /* FIXME: [??] On macOS, select returns -1 (EBADF) after pts is closed */
         r = select(fd_max + 1, & readfds, NULL, NULL, & timeout);
         if (r < 0) {
