@@ -2,7 +2,8 @@
 
 source $SRCDIR/tests/common.sh || exit 1
 
-assert '[[ -t 0 ]]'
+# Github Actions workflows have no ttys.
+[[ -t 0 ]] || exit 0
 
 export PS1='\s-\v\$ '
 assert_run sexpect sp -t 2 -ttl 20 bash --norc
