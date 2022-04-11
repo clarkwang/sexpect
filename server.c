@@ -1014,6 +1014,16 @@ serv_loop(void)
                 if (g.fd_ptm > fd_max) {
                     fd_max = g.fd_ptm;
                 }
+
+                /* [>] For non-blocking mode, we'll drop old data as necessary
+                 *     so `rawbuf' would always have free space for new output
+                 *     from pts side.
+                 */
+            } else if (spawn->nonblock) {
+                FD_SET(g.fd_ptm, & readfds);
+                if (g.fd_ptm > fd_max) {
+                    fd_max = g.fd_ptm;
+                }
             }
         }
 
