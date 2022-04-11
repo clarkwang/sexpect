@@ -29,8 +29,14 @@
 #define MAX_OLD_DATA    ( 8 * 1024)
 #define EXPECT_OUT_NUM  (9 + 1)
 
+#define NONBLOCK_DROP_SIZE (1 * 1024)
+
 #if (SIZE_RAW_BUF + 1024) > PASS_MAX_MSG
 #error "SIZE_RAW_BUF too large compared to PASS_MAX_MSG"
+#endif
+
+#if SIZE_RAW_BUF < MAX_OLD_DATA + 2 * NONBLOCK_DROP_SIZE
+#error "SIZE_RAW_BUF too small"
 #endif
 
 /* N.B.:
@@ -1065,21 +1071,19 @@ serv_loop(void)
                 serv_read_ptm();
             }
         }
-        /* -nonblock is ON */
+        /* -nonblock is ON, drop some data when rawbuf is full */
         if (spawn->nonblock && not_CONNECTED) {
-            /* mark "new" data as "old" when -nonblock is ON */
-            if (g.newcnt > 0) {
-                g.rawnew += g.newcnt;
-                g.newcnt = 0;
-            }
+            int oldcnt;
+            oldcnt = g.rawnew - g.rawbuf;
+            if (oldcnt + g.newcnt == g.rawbufsize && oldcnt <= MAX_OLD_DATA) {
+                debug("non-blocking: rawbuf full, drop %d bytes", NONBLOCK_DROP_SIZE);
 
-            /* DO NOT UNCOMMENT THIS! */
-#if 0
-            /* mark all data as expect'ed */
-            g.expoffset = g.ntotal;
-            g.expcnt = 0;
-            g.expbuf[0] = '\0';
-#endif
+                /* Here we only mark more data as _old_ and the oldest data will
+                 * be automatically dropped in `drop_old_data()'.
+                 */
+                g.rawnew += NONBLOCK_DROP_SIZE;
+                g.newcnt -= NONBLOCK_DROP_SIZE;
+            }
         }
 
         /* new message from client */
