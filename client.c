@@ -64,6 +64,8 @@ static void
 cli_hello(void)
 {
     ttlv_t * msg = NULL;
+    ttlv_t * serv_ver = NULL;
+    char errmsg[64];
 
     debug("sending HELLO");
     if (msg_hello(g.sock) < 0) {
@@ -78,7 +80,21 @@ cli_hello(void)
         msg = cli_msg_recv();
         if (msg->tag == TAG_HELLO) {
             debug("received HELLO");
+
+            serv_ver = ttlv_find_child(msg, TAG_VERSION);
+            if (NULL == serv_ver) {
+                fatal(ERROR_PROTO, "server version too old");
+            } else if ( ! streq(VERSION_, (char *)serv_ver->v_text) ) {
+                snprintf(errmsg, sizeof(errmsg),
+                         "version mismatch (server: %s, client: %s)",
+                         (char *)serv_ver->v_text, VERSION_);
+                fatal(ERROR_PROTO, "%s", errmsg);
+            }
+
             break;
+        } else if (msg->tag == TAG_ERROR) {
+            ttlv_t * errmsg = ttlv_find_child(msg, TAG_ERROR_MSG);
+            fatal(ERROR_PROTO, "%s", (char *)errmsg->v_text);
         } else {
             bug("cli_hello: not supposed to receive tag %s",
                 v2n_tag(msg->tag, NULL, 0) );

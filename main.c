@@ -16,9 +16,6 @@
 #define str_true(s)   str1of(s, "1", "on",  "yes", "y", "true",  NULL)
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
-char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.3.8";
-
 static struct {
     char * progname;
     struct st_cmdopts cmdopts;

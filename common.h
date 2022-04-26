@@ -6,6 +6,9 @@
 #include <time.h>
 #include "proto.h"
 
+extern char * const SEXPECT;
+extern char * const VERSION_;
+
 #define ARRAY_SIZE(a)      ( sizeof(a) / sizeof(a[0]) )
 #define streq(s1, s2)      (strcmp(s1, s2) == 0)
 #define strcaseeq(s1, s2)  (strcasecmp(s1, s2) == 0)
@@ -116,6 +119,7 @@ enum {
     TAG_NOHUP,
     TAG_LOOKBACK,
     TAG_PASS_SUBCMD,    /* expect, interact, wait */
+    TAG_VERSION,        /* for TAG_HELLO */
 
     /* THE END */
     TAG_END__,
@@ -198,30 +202,14 @@ struct st_set {
 
 struct st_get {
     bool get_all;
-
     bool get_pid;
-    int  pid;
-
     bool get_ppid;
-    int  ppid;
-
     bool get_tty;
-    char tty[32];
-
     bool get_timeout;
-    int  timeout;
-
     bool get_nonblock;
-    bool nonblock;
-
     bool get_autowait;
-    bool autowait;
-
     bool get_ttl;
-    int  ttl;
-
     bool get_idle;
-    int  idle;
 };
 
 struct st_kill {

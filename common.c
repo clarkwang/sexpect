@@ -17,6 +17,9 @@
 
 #define V2N_MAP(v) { v, #v }
 
+char * const SEXPECT  = "sexpect";
+char * const VERSION_ = "2.3.9";
+
 static struct {
     int debug;
 } g;
@@ -72,6 +75,7 @@ static struct v2n_map g_v2n_tag[] = {
     V2N_MAP(TAG_SET),
     V2N_MAP(TAG_TIMED_OUT),
     V2N_MAP(TAG_TTL),
+    V2N_MAP(TAG_VERSION),
     V2N_MAP(TAG_WINCH),
     V2N_MAP(TAG_WINSIZE_COL),
     V2N_MAP(TAG_WINSIZE_ROW),
@@ -975,6 +979,10 @@ msg_hello(int fd)
     ttlv_t * msg;
 
     msg = ttlv_new_struct(TAG_HELLO);
+    ttlv_append_child(msg,
+                      ttlv_new_text(TAG_VERSION, strlen(VERSION_), VERSION_),
+                      NULL);
+
     ret = msg_send(fd, msg);
     msg_free(&msg);
 

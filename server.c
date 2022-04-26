@@ -213,9 +213,36 @@ serv_msg_send(ttlv_t **msg, bool free_msg)
 }
 
 static void
-serv_hello(void)
+serv_hello(ttlv_t * msg_in)
 {
+    ttlv_t * cli_version = NULL;
+    ttlv_t * msg_out = NULL;
+    char err_msg[64];
+
     if (not_CONNECTED) {
+        return;
+    }
+
+    cli_version = ttlv_find_child(msg_in, TAG_VERSION);
+    if (NULL == cli_version) {
+        /* client version too old */
+        debug("client version too old");
+
+        close(g.conn.sock);
+        g.conn.sock = -1;
+        return;
+    } else if ( ! streq(VERSION_, (char *)cli_version->v_text) ) {
+        /* version mismatch */
+        debug("version mismatch");
+
+        snprintf(err_msg, sizeof(err_msg),
+                 "version mismatch (server: %s, client: %s)",
+                 VERSION_, (char *)cli_version->v_text);
+        msg_out = serv_new_error(ERROR_PROTO, err_msg);
+        serv_msg_send( & msg_out, true);
+
+        close(g.conn.sock);
+        g.conn.sock = -1;
         return;
     }
 
@@ -271,7 +298,7 @@ serv_process_msg(void)
 
     case TAG_HELLO:
         debug("received HELLO");
-        serv_hello();
+        serv_hello(msg_in);
 
         break;
 
