@@ -365,8 +365,10 @@ cli_loop(void)
                     printf("%s%d\n", get->get_all ? "ZombieIdle: " : "", t->v_int);
                 }
                 if (get->n_expbuf > 0) {
+                    int num = 0;
                     t = ttlv_find_child(msg_in, TAG_EXPBUF);
-                    cli_dump_cstring(MIN(get->n_expbuf, t->length), t->v_raw);
+                    num = MIN(get->n_expbuf, t->length);
+                    cli_dump_cstring(num, t->v_raw + t->length - num);
                 }
 
                 cli_disconn(0);

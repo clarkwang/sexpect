@@ -58,6 +58,7 @@ foreach(t
         expect-eof
         expect-nocase
         expect-pattern
+        get-expbuf
         interact-re-helper
         kill
         spawn-discard
