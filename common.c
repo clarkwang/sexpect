@@ -18,7 +18,7 @@
 #define V2N_MAP(v) { v, #v }
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.3.10";
+char * const VERSION_ = "2.3.11";
 
 static struct {
     int debug;
@@ -48,6 +48,7 @@ static struct v2n_map g_v2n_tag[] = {
     V2N_MAP(TAG_ERROR_CODE),
     V2N_MAP(TAG_ERROR_MSG),
     V2N_MAP(TAG_EXITED),
+    V2N_MAP(TAG_EXPBUF),
     V2N_MAP(TAG_EXPOUT),
     V2N_MAP(TAG_EXPOUT_INDEX),
     V2N_MAP(TAG_EXPOUT_TEXT),

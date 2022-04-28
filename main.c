@@ -459,6 +459,15 @@ getargs(int argc, char **argv)
                     g.cmdopts.get.get_ttl = true;
                 } else if (str1of(arg, "-idle-close", "-idle", NULL) ) {
                     g.cmdopts.get.get_idle = true;
+                } else if (str1of(arg, "-expect-buf", "-expbuf", NULL) ) {
+                    int num;
+                    next = nextarg(argv, arg, & i);
+                    num = arg2int(next);
+                    if (num <= 0 || num > MAX_EXPBUF_PEEK) {
+                        fatal(ERROR_USAGE, "must be in range [1, %d]", MAX_EXPBUF_PEEK);
+                    } else {
+                        g.cmdopts.get.n_expbuf = num;
+                    }
                 } else {
                     usage_err = true;
                     break;

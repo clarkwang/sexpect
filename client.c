@@ -177,6 +177,43 @@ cli_send_winsize(void)
 }
 
 static void
+cli_dump_cstring(int num, uint8_t * buf)
+{
+    int i;
+    uint8_t c;
+
+    printf("-cstring -exact \'");
+    for (i = 0; i < num; ++i) {
+        c = buf[i];
+        if (c == '\'') {
+            /* use \ooo only for the ' char */
+            printf("\\%03o", c);
+        } else if (c == '\\') {
+            printf("\\\\");
+        } else if (c >= 0x20 && c <= 0x7e) {
+            printf("%c", c);
+        } else if (c == '\a') {
+            printf("\\a");
+        } else if (c == '\b') {
+            printf("\\b");
+        } else if (c == '\f') {
+            printf("\\f");
+        } else if (c == '\n') {
+            printf("\\n");
+        } else if (c == '\r') {
+            printf("\\r");
+        } else if (c == '\t') {
+            printf("\\t");
+        } else if (c == '\v') {
+            printf("\\v");
+        } else {
+            printf("\\x%02x", c);
+        }
+    }
+    printf("\' # %d\n", num);
+}
+
+static void
 cli_loop(void)
 {
     char buf[1024];
@@ -326,6 +363,10 @@ cli_loop(void)
                 if (get->get_all) {
                     t = ttlv_find_child(msg_in, TAG_ZOMBIE_TTL);
                     printf("%s%d\n", get->get_all ? "ZombieIdle: " : "", t->v_int);
+                }
+                if (get->n_expbuf > 0) {
+                    t = ttlv_find_child(msg_in, TAG_EXPBUF);
+                    cli_dump_cstring(MIN(get->n_expbuf, t->length), t->v_raw);
                 }
 
                 cli_disconn(0);

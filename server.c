@@ -281,6 +281,7 @@ serv_disconn(void)
     Clock_gettime( & g.lastactive);
 }
 
+static void buf_raw2expect(void);
 static void
 serv_process_msg(void)
 {
@@ -473,6 +474,11 @@ serv_process_msg(void)
 
     case TAG_INFO:
         {
+            int n_expbuf = 0;
+
+            buf_raw2expect();
+            n_expbuf = MIN(g.expcnt, MAX_EXPBUF_PEEK);
+
             msg_out = ttlv_new_struct(TAG_INFO);
 
             ttlv_append_child(
@@ -486,6 +492,7 @@ serv_process_msg(void)
                 ttlv_new_int(TAG_TTL,         g.cmdopts->spawn.ttl),
                 ttlv_new_int(TAG_IDLETIME,    g.cmdopts->spawn.idle),
                 ttlv_new_int(TAG_ZOMBIE_TTL,  g.cmdopts->spawn.zombie_idle),
+                ttlv_new_raw(TAG_EXPBUF,      n_expbuf, g.expbuf + g.expcnt - n_expbuf),
                 NULL);
             serv_msg_send( & msg_out, true);
 

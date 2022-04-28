@@ -21,6 +21,10 @@ extern char * const VERSION_;
 #define c_O2(c1, c2)      ( (c_O1(c1) << 3) + c_O1(c2) )
 #define c_O3(c1, c2, c3)  ( (c_O2(c1, c2) << 3) + c_O1(c3) )
 
+#define MIN(a, b) ( (a) < (b) ? (a) : (b) )
+#define MAX(a, b) ( (a) > (b) ? (a) : (b) )
+
+#define MAX_EXPBUF_PEEK 4096
 #define PASS_MAGIC      0x4a55575a /* JUWZ */
 #define PASS_MAX_MSG    (64 * 1024)
 #define PASS_MAX_SEND   1024
@@ -87,6 +91,7 @@ enum {
     TAG_ERROR,
     TAG_TIMED_OUT,              /* "expect" timed out */
     TAG_EXPOUT_TEXT,            /* $expect_out(N,string) */
+    TAG_EXPBUF,                 /* get -expect-buffer */
 
     /*
      * bidir
@@ -210,6 +215,7 @@ struct st_get {
     bool get_autowait;
     bool get_ttl;
     bool get_idle;
+    int  n_expbuf;
 };
 
 struct st_kill {
