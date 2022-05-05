@@ -61,8 +61,8 @@ foreach(t
         get-expbuf
         interact-re-helper
         kill
-        spawn-discard
         spawn-nohup
+        spawn-nonblock
         spawn-zombie-idle
         spawn-zombie-idle_02
         still-data-after-exit

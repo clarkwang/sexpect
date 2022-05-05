@@ -5,7 +5,7 @@
 
 source $SRCDIR/tests/common.sh || exit 1
 
-assert_run sexpect sp -t 10 -discard -ttl 20 bash -c 'echo aaa; sleep 5; echo bbb; sleep 2'
+assert_run sexpect sp -t 10 -nonblock -ttl 20 bash -c 'echo aaa; sleep 5; echo bbb; sleep 2'
 run sleep 1
 
 # `aaa' can still be expect'ed.
@@ -28,13 +28,13 @@ st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
 assert '[[ $st == S* ]]'
 
-assert_run sexpect set -discard 1
+assert_run sexpect set -nonblock 1
 run sleep .5
 st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
 assert '[[ $st == R* ]]'
 
-assert_run sexpect set -discard 0
+assert_run sexpect set -nonblock 0
 run sleep 1
 st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
@@ -45,7 +45,7 @@ assert_run sexpect c
 
 #----------------------------------------------------------------------------#
 
-assert_run sexpect sp -discard -ttl 5 od -v /dev/zero
+assert_run sexpect sp -nonblock -ttl 5 od -v /dev/zero
 run sleep 1
 pid=$( sexpect get -pid )
 info "pid=$pid"
@@ -61,13 +61,13 @@ for i in {1..100}; do
     fi
 done
 
-assert_run sexpect set -discard 0
+assert_run sexpect set -nonblock 0
 run sleep 1
 st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
 assert '[[ $st == S* ]]'
 
-assert_run sexpect set -discard 1
+assert_run sexpect set -nonblock 1
 run sleep 1
 st=$( ps -p $pid -o stat | sed -n 2p )
 info "st=$st"
