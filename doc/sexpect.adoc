@@ -1,6 +1,6 @@
 = sexpect(1)
 :doctype: manpage
-:sexpect-version: 2.3.7
+:sexpect-version: 2.3.11
 :man manual: sexpect manual
 :man source: sexpect {sexpect-version}
 :page-layout: base
@@ -17,16 +17,6 @@ sexpect - Expect for Shells
 
 *sexpect* is another implementation of *Expect* which is specifically
 designed for *Shell* scripts (sh, bash, ksh, zsh, ...).
-
-Unlike *Expect* (for *Tcl*), *Expect.pm* (for *Perl*), *Pexpect* (for
-*Python*) or other similar
-*Expect* implementations, *sexpect* is not bound to any specific programming
-language so *sexpect* can also be used with other programming languages as
-long as they support running external commands.
-
-Another interesting *sexpect* feature is that the spawned  process is
-running in background.
-You can attach to or detach from it as needed (as with *GNU screen*).
 
 *sexpect* is designed in the client/server model.
 '*sexpect spawn*' starts the server (running as a daemon) and runs the
@@ -439,6 +429,9 @@ The '*get*' sub-command supports the following options:
 -ttl ::
     Get the TTL value. See '*spawn*' for details.
 
+-expect-buf N | -expbuf N ::
+    Dump the most recent _N_ (at most 4096) chars from the internal expect buffer.
+
 == ENVIRONMENT VARIABLES
 
 SEXPECT_SOCKFILE ::
@@ -456,9 +449,9 @@ expect(1), pty(7), pts(4), glob(3), fnmatch(3)
 
 == AUTHOR
 
-Written by mailto:dearvoid@gmail.com[Clark Wang] .
+Written by _Clark Wang_ <dearvoid AT gmail.com>.
 
 == REPORTING BUGS
 
-Report bugs to mailto:dearvoid@gmail.com[Clark Wang] or
-open an issue at https://github.com/clarkwang/sexpect/
+Report bugs to _Clark Wang_ <dearvoid AT gmail.com> or
+open an issue at https://github.com/clarkwang/sexpect/issues/ .

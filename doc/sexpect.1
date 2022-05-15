@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: sexpect
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.16
-.\"      Date: 2021-08-05
+.\" Generator: Asciidoctor 2.0.17
+.\"      Date: 2022-05-15
 .\"    Manual: sexpect manual
-.\"    Source: sexpect 2.3.7
+.\"    Source: sexpect 2.3.11
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2021-08-05" "sexpect 2.3.7" "sexpect manual"
+.TH "SEXPECT" "1" "2022-05-15" "sexpect 2.3.11" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -36,16 +36,6 @@ sexpect \- Expect for Shells
 .sp
 \fBsexpect\fP is another implementation of \fBExpect\fP which is specifically
 designed for \fBShell\fP scripts (sh, bash, ksh, zsh, ...).
-.sp
-Unlike \fBExpect\fP (for \fBTcl\fP), \fBExpect.pm\fP (for \fBPerl\fP), \fBPexpect\fP (for
-\fBPython\fP) or other similar
-\fBExpect\fP implementations, \fBsexpect\fP is not bound to any specific programming
-language so \fBsexpect\fP can also be used with other programming languages as
-long as they support running external commands.
-.sp
-Another interesting \fBsexpect\fP feature is that the spawned  process is
-running in background.
-You can attach to or detach from it as needed (as with \fBGNU screen\fP).
 .sp
 \fBsexpect\fP is designed in the client/server model.
 \*(Aq\fBsexpect spawn\fP\*(Aq starts the server (running as a daemon) and runs the
@@ -606,6 +596,11 @@ Get the current default timeout value.
 .RS 4
 Get the TTL value. See \*(Aq\fBspawn\fP\*(Aq for details.
 .RE
+.sp
+\-expect\-buf N | \-expbuf N
+.RS 4
+Dump the most recent \fIN\fP (at most 4096) chars from the internal expect buffer.
+.RE
 .SH "ENVIRONMENT VARIABLES"
 .sp
 SEXPECT_SOCKFILE
@@ -621,13 +616,10 @@ Project home: \c
 expect(1), pty(7), pts(4), glob(3), fnmatch(3)
 .SH "AUTHOR"
 .sp
-Written by \c
-.MTO "dearvoid\(atgmail.com" "Clark Wang" ""
-.
+Written by \fIClark Wang\fP <dearvoid AT gmail.com>.
 .SH "REPORTING BUGS"
 .sp
-Report bugs to \c
-.MTO "dearvoid\(atgmail.com" "Clark Wang" ""
-or
+Report bugs to \fIClark Wang\fP <dearvoid AT gmail.com> or
 open an issue at \c
-.URL "https://github.com/clarkwang/sexpect/" "" ""
+.URL "https://github.com/clarkwang/sexpect/issues/" "" ""
+.

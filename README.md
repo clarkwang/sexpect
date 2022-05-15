@@ -1,16 +1,13 @@
 # What's `sexpect`
 
-`sexpect` is another implementation of [`Expect`][expect].
+`sexpect` is another implementation of [`Expect`][expect] which is
+specifically designed for *Shell* scripts (sh, bash, ksh, zsh, ...).
 
-Unlike [`Expect`][expect] (Tcl), [`Expect.pm`][expect.pm] (Perl),
-[`Pexpect`][pexpect] (Python) or other similar
-`Expect` implementations, `sexpect` is not bound to any specific programming
-languages so it can be used with Shells (`Bash`, `Ksh`, `Zsh`, ...) and any other languages which support running external
-commands. **Users who write shell scripts would love this because
-they don't have to learn other languages just to use the `Expect` feature.**
-
-Another interesting `sexpect` feature is that the spawned child process is
-running in background. You can *attach* to and *detach* from it as needed.
+`sexpect` is designed in the client/server model.
+`sexpect spawn PROGRAM [option]..` starts the _server_ (running as a daemon)
+and runs the specified _PROGRAM_ in background.
+Other `sexpect` sub-commands (`send`, `expect`, `wait`, ...) communicate to the
+server as _client_ commands.
 
 # How to build
 
@@ -41,11 +38,11 @@ Tested on:
     
 # Manual
 
-See [doc/sexpect.html](https://htmlpreview.github.io/?https://github.com/clarkwang/sexpect/blob/master/doc/sexpect.html) .
+See [doc/sexpect.adoc](doc/sexpect.adoc).
     
 # Examples
 
-See the [examples/](https://github.com/clarkwang/sexpect/tree/master/examples) dir.
+See the [examples/](examples/) dir.
 
 [expect]:    https://www.nist.gov/services-resources/software/expect
 [expect.pm]: http://search.cpan.org/perldoc?Expect
