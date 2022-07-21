@@ -18,7 +18,7 @@
 #define V2N_MAP(v) { v, #v }
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.3.11";
+char * const VERSION_ = "2.3.12";
 
 static struct {
     int debug;

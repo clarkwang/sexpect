@@ -210,7 +210,7 @@ cli_dump_cstring(int num, uint8_t * buf)
             printf("\\x%02x", c);
         }
     }
-    printf("\' # %d\n", num);
+    printf("\' # len=%d\n", num);
 }
 
 static void

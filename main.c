@@ -205,42 +205,82 @@ nextarg(char ** argv, char * prev_arg, int * cur_idx)
 }
 
 static char *
-readfile(const char * fname, int * len)
+readfd(int fd, int * plen)
 {
-    int fd, ret;
+    int ret, limit;
+    char * buf = NULL;
+
+    limit = * plen;
+    if (limit <= 0) {
+        fatal(ERROR_USAGE, "#read must > 0");
+    }
+
+    * plen = 0;
+
+    buf = malloc(limit + 1);
+    if (buf == NULL) {
+        fatal_sys("malloc(%d)", limit + 1);
+    }
+
+    ret = read(fd, buf, limit);
+    if (ret < 0) {
+        fatal_sys("read(#=%d)", limit);
+    } else {
+        buf[ret] = 0;
+        * plen = ret;
+    }
+
+    return buf;
+}
+
+static char *
+readfile(const char * fname, int * plen)
+{
+    int fd, ret, limit;
     char * buf = NULL;
     struct stat st;
 
-    * len = 0;
+    limit = * plen;
 
-    fd = open(fname, O_RDONLY);
-    if (fd < 0) {
-        fatal_sys("open(%s)", fname);
+    // stdin
+    if (limit == 0 && streq(fname, "-") ) {
+        fatal(ERROR_USAGE, "must specify -limit for non-regular file");
+
+        // regular file
+    } else if (limit == 0 && ! streq(fname, "-") ) {
+        ret = stat(fname, & st);
+        if (ret < 0) {
+            fatal_sys("stat(%s)", fname);
+        }
+
+        if ( ! S_ISREG(st.st_mode) ) {
+            fatal(ERROR_USAGE, "must specify -limit for non-regular file");
+        }
+
+        if (st.st_size > PASS_MAX_SEND) {
+            fatal(ERROR_USAGE,
+                  "file too large (%d > %d)", (int)st.st_size, PASS_MAX_SEND);
+        }
+
+        limit = st.st_size;
     }
 
-    ret = fstat(fd, & st);
-    if (ret < 0) {
-        fatal_sys("fstat(%s)", fname);
-    }
-
-    if ( ! S_ISREG(st.st_mode) ) {
-        fatal(ERROR_USAGE, "not a regular file: %s", fname);
-    }
-
-    if (st.st_size > PASS_MAX_SEND) {
-        fatal(ERROR_USAGE,
-            "file too large (%d > %d)", (int)st.st_size, PASS_MAX_SEND);
-    }
-
-    buf = malloc(st.st_size);
-    ret = read(fd, buf, st.st_size);
-    if (ret < 0) {
-        fatal_sys("read(%s)", fname);
+    if (streq(fname, "-") ) {
+        fd = STDIN_FILENO;
     } else {
-        * len = ret;
+        fd = open(fname, O_RDONLY);
+        if (fd < 0) {
+            fatal_sys("open(%s)", fname);
+        }
     }
 
-    close(fd);
+    * plen = limit;
+    buf = readfd(fd, plen);
+
+    if ( ! streq(fname, "-") ) {
+        close(fd);
+    }
+
     return buf;
 }
 
@@ -249,7 +289,7 @@ getargs(int argc, char **argv)
 {
     int i;
     char * arg, * next;
-    bool usage_err = false;
+    bool unexpected_arg = false;
 
 #if 0
     if ((g.progname = strrchr(argv[0], '/')) != NULL) {
@@ -367,13 +407,13 @@ getargs(int argc, char **argv)
                 next = nextarg(argv, arg, & i);
                 g.cmdopts.chkerr.cmpto = next;
             } else {
-                usage_err = true;
+                unexpected_arg = true;
                 break;
             }
 
             /* close */
         } else if (streq(g.cmdopts.cmd, CMD_CLOSE) ) {
-            usage_err = true;
+            unexpected_arg = true;
             break;
 
             /* expect */
@@ -409,7 +449,7 @@ getargs(int argc, char **argv)
             } else if (arg[0] == '\0') {
                 fatal(ERROR_USAGE, "pattern cannot be empty");
             } else if ( (st->expflags & PASS_EXPECT_EXACT) != 0) {
-                usage_err = true;
+                unexpected_arg = true;
                 break;
             } else {
                 st->pattern = arg;
@@ -422,7 +462,7 @@ getargs(int argc, char **argv)
                 next = nextarg(argv, arg, & i);
                 g.cmdopts.expout.index = arg2uint(next);
             } else {
-                usage_err = true;
+                unexpected_arg = true;
                 break;
             }
 
@@ -469,14 +509,14 @@ getargs(int argc, char **argv)
                         g.cmdopts.get.n_expbuf = num;
                     }
                 } else {
-                    usage_err = true;
+                    unexpected_arg = true;
                     break;
                 }
             }
 
             /* help */
         } else if (streq(g.cmdopts.cmd, CMD_HELP) ) {
-            usage_err = true;
+            unexpected_arg = true;
             break;
 
             /* interact */
@@ -496,7 +536,7 @@ getargs(int argc, char **argv)
             } else if (str1of(arg, "-nodetach", "-nodet", "-nod", NULL) ) {
                 g.cmdopts.pass.no_detach = true;
             } else {
-                usage_err = true;
+                unexpected_arg = true;
                 break;
             }
 
@@ -511,7 +551,7 @@ getargs(int argc, char **argv)
                         "%s not supported, please use signal number", arg);
                 }
             } else {
-                usage_err = true;
+                unexpected_arg = true;
                 break;
             }
 
@@ -525,31 +565,28 @@ getargs(int argc, char **argv)
             } else if (str1of(arg, "-strip", NULL) ) {
                 st->strip = true;
             } else if (str1of(arg, "-env", "-var", NULL) ) {
-                if (st->data != NULL) {
-                    usage_err = true;
-                    break;
-                }
-                st->env = true;
-                next = nextarg(argv, arg, & i);
-                st->data = getenv(next);
-                if (st->data == NULL) {
-                    fatal(ERROR_USAGE, "env var not found: %s", next);
-                } else {
-                    st->len = strlen(st->data);
-                }
+                st->sources += 1;
+                st->envvar = nextarg(argv, arg, & i);
             } else if (str1of(arg, "-file", "-f", NULL) ) {
-                if (st->data != NULL) {
-                    usage_err = true;
-                    break;
-                }
-                st->file = true;
+                st->sources += 1;
+                st->filename = nextarg(argv, arg, & i);
+            } else if (str1of(arg, "-fd", NULL) ) {
+                st->sources += 1;
+                st->has_fd = true;
                 next = nextarg(argv, arg, & i);
-                st->data = readfile(next, & st->len);
+                st->fd = arg2uint(next);
+            } else if (str1of(arg, "-limit", NULL) ) {
+                next = nextarg(argv, arg, & i);
+                st->limit = arg2uint(next);
+                if (st->limit <= 0 || st->limit > PASS_MAX_SEND) {
+                    fatal(ERROR_USAGE, "limit must be in [0, %d]", PASS_MAX_SEND);
+                }
             } else if (streq(arg, "--" ) ) {
+                st->sources += 1;
                 if (argv[i + 1] != NULL) {
                     if (argv[i + 2] != NULL) {
                         arg = argv[i + 2];
-                        usage_err = true;
+                        unexpected_arg = true;
                         break;
                     }
                     st->data = strdup(argv[i + 1]);
@@ -561,12 +598,14 @@ getargs(int argc, char **argv)
             } else if (arg[0] == '-') {
                 fatal(ERROR_USAGE, "unknown send option: %s", arg);
             } else if (st->data == NULL) {
+                st->sources += 1;
                 st->data = strdup(arg);
                 st->len  = strlen(arg);
 
                 memset(arg, '*', st->len);
+                break;
             } else {
-                usage_err = true;
+                unexpected_arg = true;
                 break;
             }
 
@@ -583,7 +622,7 @@ getargs(int argc, char **argv)
                     st->autowait = false;
                 } else {
                     arg = next;
-                    usage_err = true;
+                    unexpected_arg = true;
                     break;
                 }
 
@@ -598,7 +637,7 @@ getargs(int argc, char **argv)
                     st->nonblock = false;
                 } else {
                     arg = next;
-                    usage_err = true;
+                    unexpected_arg = true;
                     break;
                 }
             } else if (str1of(arg, "-timeout", "-t", NULL ) ) {
@@ -626,7 +665,7 @@ getargs(int argc, char **argv)
                     st->idle = 0;
                 }
             } else {
-                usage_err = true;
+                unexpected_arg = true;
                 break;
             }
 
@@ -682,7 +721,7 @@ getargs(int argc, char **argv)
 
             /* version */
         } else if (streq(g.cmdopts.cmd, CMD_VERSION) ) {
-            usage_err = true;
+            unexpected_arg = true;
             break;
 
             /* wait */
@@ -691,12 +730,12 @@ getargs(int argc, char **argv)
                 next = nextarg(argv, arg, & i);
                 g.cmdopts.pass.lookback = arg2uint(next);
             } else {
-                usage_err = true;
+                unexpected_arg = true;
                 break;
             }
         }
     }
-    if (usage_err) {
+    if (unexpected_arg) {
         fatal(ERROR_USAGE, "unexpected argument: %s", arg);
     }
 
@@ -775,29 +814,62 @@ getargs(int argc, char **argv)
         struct st_send * st = & g.cmdopts.send;
         char * data = NULL;
 
+        if (st->sources > 1) {
+            fatal(ERROR_USAGE, "too many data sources");
+        }
+        // -cstring
+        if (st->cstring && st->data == NULL) {
+            fatal(ERROR_USAGE, "-cstring unexpected");
+        }
+        // -strip
+        if (st->strip && ! (st->filename || st->has_fd) ) {
+            fatal(ERROR_USAGE, "-strip can only be used with -file or -fd");
+        }
+
+        if (st->data != NULL) {
+            // -cstring
+            if (st->cstring) {
+                strunesc(st->data, & data, & st->len);
+                if (data == NULL) {
+                    fatal(ERROR_USAGE, "invalid backslash escapes: %s", st->data);
+                } else {
+                    st->data = data;
+                }
+            }
+
+            // -env VAR
+        } else if (st->envvar != NULL) {
+            st->data = getenv(st->envvar);
+            if (st->data == NULL) {
+                fatal(ERROR_USAGE, "env var not found: %s", st->envvar);
+            } else {
+                st->len = strlen(st->data);
+            }
+
+            // -file FILE [-limit LIMIT]
+        } else if (st->filename != NULL) {
+            st->len = st->limit;
+            st->data = readfile(st->filename, & st->len);
+
+            // -file FILE -limit LIMIT
+        } else if (st->has_fd) {
+            if (st->limit <= 0) {
+                fatal(ERROR_USAGE, "-limit must be specified for -fd");
+            }
+            st->len = st->limit;
+            st->data = readfd(st->fd, & st->len);
+        }
+
+        // -strip
+        if ( (st->filename || st->has_fd) && st->strip) {
+            str_rstrip(st->data);
+            st->len = strlen(st->data);
+        }
+
+        // This is necessary or `send -cr' alone would not work.
         if (st->data == NULL) {
             st->data = "";
-        }
-
-        if ( (st->file || st->env) && st->cstring) {
-            fatal(ERROR_USAGE, "-cstring cannot be used with -file or -env");
-        }
-
-        if (st->strip && ! st->file) {
-            fatal(ERROR_USAGE, "-strip can only be used with -file");
-        }
-
-        if (st->data != NULL && st->cstring) {
-            strunesc(st->data, & data, & st->len);
-            if (data == NULL) {
-                fatal(ERROR_USAGE, "invalid backslash escapes: %s", st->data);
-            } else {
-                st->data = data;
-            }
-        }
-
-        if (st->file && st->strip) {
-            str_rstrip(st->data);
+            st->len = 0;
         }
 
         if (st->len > PASS_MAX_SEND) {

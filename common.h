@@ -173,10 +173,15 @@ struct st_spawn {
 
 struct st_send {
     bool   cstring;
-    bool   file;
+    bool   has_fd;
     bool   strip;
-    bool   env;
     bool   enter;
+
+    char * envvar;    // send -env VAR
+    char * filename;  // send -file FILE
+    int    fd;        // send -fd FD
+    int    limit;     // -limit LIMIT (for -file or -fd)
+    int    sources;
 
     /* to server */
     char * data;
