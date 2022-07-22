@@ -460,8 +460,6 @@ cli_main(struct st_cmdopts * cmdopts)
                 cmdopts->send.len + 1, cmdopts->send.data);
             msg_out->v_raw[cmdopts->send.len] = '\r';
         } else if (cmdopts->send.len > 0) {
-            /* send even when the length is 0 or we'll block waiting for
-             * the ACK */
             msg_out = ttlv_new_raw(TAG_SEND,
                 cmdopts->send.len, cmdopts->send.data);
         }
