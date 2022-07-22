@@ -2,12 +2,12 @@
 .\"     Title: sexpect
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.17
-.\"      Date: 2022-05-15
+.\"      Date: 2022-07-23
 .\"    Manual: sexpect manual
-.\"    Source: sexpect 2.3.11
+.\"    Source: sexpect 2.3.12
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2022-05-15" "sexpect 2.3.11" "sexpect manual"
+.TH "SEXPECT" "1" "2022-07-23" "sexpect 2.3.12" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -320,15 +320,30 @@ Append \fBENTER\fP (\fB\(rsr\fP) to the specified \fISTRING\fP before sending to
 spawned process.
 .RE
 .sp
+\-fd FD
+.RS 4
+Read data from file descriptor \fIFD\fP and send to the spawned process.
+Option \*(Aq\fB\-limit\fP\*(Aq must be specified with \*(Aq\fB\-fd\fP\*(Aq.
+Use \*(Aq\fB\-strip\fP\*(Aq to remove trailing white space chars.
+.RE
+.sp
 \-file FILE | \-f FILE
 .RS 4
-Send the content of the \fIFILE\fP to the spawned process.
+Send the content of the \fIFILE\fP to the spawned process. If \fIFILE\fP is \*(Aq\-\*(Aq then
+\fIstdin\fP will be used. Option \*(Aq\fB\-limit\fP\*(Aq must be specified if \fIFILE\fP is not a
+regular file.
 Use \*(Aq\fB\-strip\fP\*(Aq to remove trailing white space chars.
 .RE
 .sp
 \-env NAME | \-var NAME
 .RS 4
 Send the value of environment variable \fINAME\fP to the spawned process.
+.RE
+.sp
+\-limit LIMIT
+.RS 4
+Used with \*(Aq\fB\-file\fP\*(Aq or \*(Aq\fB\-fd\fP\*(Aq. Read at most \fILIMIT\fP chars from the file.
+\fILIMIT\fP should be in range \fB[1, 1024]\fP.
 .RE
 .sp
 \-strip

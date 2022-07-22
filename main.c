@@ -80,8 +80,10 @@ send (s)\n\
     Options:\n\
         -cstring | -cstr | -c\n\
         -enter | -cr\n\
+        -fd FD\n\
         -file FILE | -f FILE\n\
         -env NAME | -var NAME\n\
+        -limit LIMIT\n\
         -strip\n\
 \n\
 interact (i)\n\

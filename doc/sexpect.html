@@ -750,14 +750,27 @@ To send more data, use multiple '<strong>sexpect send</strong>' commands.</p>
 <p>Append <strong>ENTER</strong> (<strong>\r</strong>) to the specified <em>STRING</em> before sending to the
 spawned process.</p>
 </dd>
+<dt class="hdlist1">-fd FD </dt>
+<dd>
+<p>Read data from file descriptor <em>FD</em> and send to the spawned process.
+Option '<strong>-limit</strong>' must be specified with '<strong>-fd</strong>'.
+Use '<strong>-strip</strong>' to remove trailing white space chars.</p>
+</dd>
 <dt class="hdlist1">-file FILE | -f FILE </dt>
 <dd>
-<p>Send the content of the <em>FILE</em> to the spawned process.
+<p>Send the content of the <em>FILE</em> to the spawned process. If <em>FILE</em> is '-' then
+<em>stdin</em> will be used. Option '<strong>-limit</strong>' must be specified if <em>FILE</em> is not a
+regular file.
 Use '<strong>-strip</strong>' to remove trailing white space chars.</p>
 </dd>
 <dt class="hdlist1">-env NAME | -var NAME </dt>
 <dd>
 <p>Send the value of environment variable <em>NAME</em> to the spawned process.</p>
+</dd>
+<dt class="hdlist1">-limit LIMIT </dt>
+<dd>
+<p>Used with '<strong>-file</strong>' or '<strong>-fd</strong>'. Read at most <em>LIMIT</em> chars from the file.
+<em>LIMIT</em> should be in range <strong>[1, 1024]</strong>.</p>
 </dd>
 <dt class="hdlist1">-strip </dt>
 <dd>
@@ -1125,7 +1138,7 @@ open an issue at <a href="https://github.com/clarkwang/sexpect/issues/" class="b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-05-15 19:19:54 +0800
+Last updated 2022-07-23 00:27:28 +0800
 </div>
 </div>
 </body>

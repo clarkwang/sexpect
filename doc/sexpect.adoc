@@ -1,6 +1,6 @@
 = sexpect(1)
 :doctype: manpage
-:sexpect-version: 2.3.11
+:sexpect-version: 2.3.12
 :man manual: sexpect manual
 :man source: sexpect {sexpect-version}
 :page-layout: base
@@ -223,12 +223,23 @@ Other supported escapes:
     Append *ENTER* (*\r*) to the specified _STRING_ before sending to the
     spawned process.
 
+-fd FD ::
+    Read data from file descriptor _FD_ and send to the spawned process.
+    Option '*-limit*' must be specified with '*-fd*'.
+    Use '*-strip*' to remove trailing white space chars.
+
 -file FILE | -f FILE ::
-    Send the content of the _FILE_ to the spawned process.
+    Send the content of the _FILE_ to the spawned process. If _FILE_ is '-' then
+    _stdin_ will be used. Option '*-limit*' must be specified if _FILE_ is not a
+    regular file.
     Use '*-strip*' to remove trailing white space chars.
 
 -env NAME | -var NAME ::
     Send the value of environment variable _NAME_ to the spawned process.
+
+-limit LIMIT ::
+    Used with '*-file*' or '*-fd*'. Read at most _LIMIT_ chars from the file.
+    _LIMIT_ should be in range *[1, 1024]*.
 
 -strip ::
     See option '*-file*'.
