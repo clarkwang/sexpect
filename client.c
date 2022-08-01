@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <termios.h>
 #include <signal.h>
+#include <regex.h>
+#include <ctype.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -215,6 +217,52 @@ cli_dump_cstring(int num, uint8_t * buf)
     printf("\' # len=%d\n", num);
 }
 
+/*
+ * ARGS:
+ *   re    - compiled regex_t
+ *   s     - input string
+ *   rep   - replace string
+ *   flags - regexec() flags
+ *
+ * RETURN:
+ *   New string if replace
+ */
+void
+cli_write_regsub(int fd, char * s, regex_t * re, char * rep, int flags)
+{
+    const int nmatch = 10;
+    regmatch_t matches[nmatch];
+    char * p = NULL;
+    int sub;
+
+    while (s[0]) {
+        if (regexec(re, s, nmatch, matches, flags) != 0) {
+            write(fd, s, strlen(s) );
+            return;
+        }
+
+        write(fd, s, matches[0].rm_so);
+
+        for (p = rep; p[0]; ++p) {
+            if (p[0] != '$' || ! isdigit(p[1]) ) {
+                write(fd, p, 1);
+                continue;
+            }
+
+            sub = p[1] - '0';
+            ++p;
+
+            if (matches[sub].rm_so == -1) {
+                continue;
+            }
+
+            write(fd, s + matches[sub].rm_so, matches[sub].rm_eo - matches[sub].rm_so);
+        }
+
+        s += matches[0].rm_eo;
+    }
+}
+
 static void
 cli_loop(void)
 {
@@ -227,6 +275,9 @@ cli_loop(void)
     ttlv_t * msg_in = NULL;
     struct st_cmdopts * cmdopts = g.cmdopts;
     struct timeval timeout;
+    regex_t reg_ps1;
+
+    regcomp( & reg_ps1, "bash-([.0-9]+)[$#] ", REG_EXTENDED | REG_ICASE | REG_NOTBOL | REG_NOTEOL);
 
     while (true) {
         /* SIGWINCH */
@@ -301,7 +352,12 @@ cli_loop(void)
             if (msg_in->tag == TAG_ACK) {
                 cli_disconn(0);
             } else if (msg_in->tag == TAG_OUTPUT) {
-                write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
+                if (0) {
+                    write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
+                } else {
+                    /* FIXME: remove NULL bytes from `msg_in->v_raw' */
+                    cli_write_regsub(STDOUT_FILENO, (char *)msg_in->v_raw, & reg_ps1, "BASH-\033[31m$1\033[m% ", 0);
+                }
             } else if (msg_in->tag == TAG_EXPOUT_TEXT) {
                 write(STDOUT_FILENO, msg_in->v_text, msg_in->length);
                 cli_disconn(0);
