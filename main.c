@@ -93,6 +93,7 @@ interact (i)\n\
     Options:\n\
         -lookback N | -lb N\n\
         -nodetach | -nodet\n\
+        -re PATTERN [<-nocase | -icase | -i>]\n\
 \n\
 wait (w)\n\
 --------\n\
