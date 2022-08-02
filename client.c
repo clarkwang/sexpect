@@ -219,52 +219,10 @@ cli_dump_cstring(int num, uint8_t * buf)
 
 /*
  * ARGS:
- *   re    - compiled regex_t
- *   s     - input string
- *   rep   - replace string
- *   flags - regexec() flags
- *
- * RETURN:
- *   New string if replace
+ *  s: NULL terminated string
  */
-void
-cli_write_regsub(int fd, char * s, regex_t * re, char * rep, int flags)
-{
-    const int nmatch = 10;
-    regmatch_t matches[nmatch];
-    char * p = NULL;
-    int sub;
-
-    while (s[0]) {
-        if (regexec(re, s, nmatch, matches, flags) != 0) {
-            write(fd, s, strlen(s) );
-            return;
-        }
-
-        write(fd, s, matches[0].rm_so);
-
-        for (p = rep; p[0]; ++p) {
-            if (p[0] != '$' || ! isdigit(p[1]) ) {
-                write(fd, p, 1);
-                continue;
-            }
-
-            sub = p[1] - '0';
-            ++p;
-
-            if (matches[sub].rm_so == -1) {
-                continue;
-            }
-
-            write(fd, s + matches[sub].rm_so, matches[sub].rm_eo - matches[sub].rm_so);
-        }
-
-        s += matches[0].rm_eo;
-    }
-}
-
 static void
-cli_highlight(int fd, char * s, int size, regex_t * pat, char * color)
+cli_highlight(int fd, char * s, regex_t * pat, char * color)
 {
     regmatch_t match;
     int flags = REG_NOTBOL | REG_NOTEOL;
@@ -290,6 +248,30 @@ cli_highlight(int fd, char * s, int size, regex_t * pat, char * color)
 }
 
 static void
+cli_highlight_raw(int fd, char * raw, int size, regex_t * pat, char * color)
+{
+    char * s = NULL;
+    int n = 0, len;
+
+    if (raw[size] != 0) {
+        return;
+    }
+
+    while (n < size) {
+        s = raw + n;
+        len = strlen(s);
+
+        cli_highlight(fd, s, pat, color);
+
+        n += len;
+        if (n < size) {
+            write(fd, "", 1);
+            n++;
+        }
+    }
+}
+
+static void
 cli_loop(void)
 {
     char buf[1024];
@@ -301,7 +283,7 @@ cli_loop(void)
     ttlv_t * msg_in = NULL;
     struct st_cmdopts * cmdopts = g.cmdopts;
     struct timeval timeout;
-    bool interact_hi = false;
+    bool hi_asked = false;
     regex_t hi_pat;
 
     if (streq(cmdopts->cmd, CMD_INTERACT) && cmdopts->pass.hi_pattern) {
@@ -312,7 +294,7 @@ cli_loop(void)
         if (regcomp( & hi_pat, cmdopts->pass.hi_pattern, flags) != 0) {
             cmdopts->pass.hi_pattern = NULL;
         } else {
-            interact_hi = true;
+            hi_asked = true;
         }
     }
 
@@ -389,12 +371,10 @@ cli_loop(void)
             if (msg_in->tag == TAG_ACK) {
                 cli_disconn(0);
             } else if (msg_in->tag == TAG_OUTPUT) {
-                if (interact_hi) {
-                    /*
-                     * FIXME: msg_in->v_raw may have NULL bytes
-                     */
-                    cli_highlight(STDOUT_FILENO, (char *)msg_in->v_raw, msg_in->length,
-                                  & hi_pat, cmdopts->pass.hi_color);
+                if (hi_asked) {
+                    cli_highlight_raw(STDOUT_FILENO, (char *)msg_in->v_raw,
+                                      msg_in->length, & hi_pat,
+                                      cmdopts->pass.hi_color);
                 } else {
                     write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
                 }
