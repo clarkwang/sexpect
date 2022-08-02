@@ -238,7 +238,12 @@ struct st_pass {
     char * pattern;
     bool   cstring;
     bool   no_capture;
-    int    lookback;
+    int    lookback;    /* expect, interact */
+
+    /* interact */
+    char * hi_pattern;
+    bool   hi_nocase;
+    char * hi_color;
 };
 
 struct st_cmdopts {

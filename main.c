@@ -538,6 +538,14 @@ getargs(int argc, char **argv)
                 g.cmdopts.pass.lookback = arg2uint(next);
             } else if (str1of(arg, "-nodetach", "-nodet", "-nod", NULL) ) {
                 g.cmdopts.pass.no_detach = true;
+            } else if (str1of(arg, "-highlight", "-hi", NULL) ) {
+                next = nextarg(argv, arg, & i);
+                g.cmdopts.pass.hi_pattern = next;
+            } else if (str1of(arg, "-highlight-color", "-hi-color", NULL) ) {
+                next = nextarg(argv, arg, & i);
+                g.cmdopts.pass.hi_color = next;
+            } else if (str1of(arg, "-highlight-nocase", "-hi-nocase", NULL) ) {
+                g.cmdopts.pass.hi_nocase = true;
             } else {
                 unexpected_arg = true;
                 break;
@@ -810,6 +818,9 @@ getargs(int argc, char **argv)
             if (strlen(st->pattern) ==  0) {
                 fatal(ERROR_USAGE, "pattern cannot be empty");
             }
+        }
+        if (st->hi_pattern != NULL && st->hi_color == NULL) {
+            st->hi_color = "1;31";
         }
 
         /* send */

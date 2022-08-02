@@ -264,6 +264,32 @@ cli_write_regsub(int fd, char * s, regex_t * re, char * rep, int flags)
 }
 
 static void
+cli_highlight(int fd, char * s, int size, regex_t * pat, char * color)
+{
+    regmatch_t match;
+    int flags = REG_NOTBOL | REG_NOTEOL;
+
+    while (s[0]) {
+        if (regexec(pat, s, 1, & match, flags) != 0) {
+            write(fd, s, strlen(s) );
+            return;
+        }
+
+        write(fd, s, match.rm_so);
+
+        write(fd, "\033[", 2);
+        write(fd, color, strlen(color) );
+        write(fd, "m", 1);
+
+        write(fd, s + match.rm_so, match.rm_eo - match.rm_so);
+
+        write(fd, "\033[m", 3);
+
+        s += match.rm_eo;
+    }
+}
+
+static void
 cli_loop(void)
 {
     char buf[1024];
@@ -275,9 +301,20 @@ cli_loop(void)
     ttlv_t * msg_in = NULL;
     struct st_cmdopts * cmdopts = g.cmdopts;
     struct timeval timeout;
-    regex_t reg_ps1;
+    bool interact_hi = false;
+    regex_t hi_pat;
 
-    regcomp( & reg_ps1, "bash-([.0-9]+)[$#] ", REG_EXTENDED | REG_ICASE | REG_NOTBOL | REG_NOTEOL);
+    if (streq(cmdopts->cmd, CMD_INTERACT) && cmdopts->pass.hi_pattern) {
+        int flags = REG_EXTENDED;
+        if (cmdopts->pass.hi_nocase) {
+            flags |= REG_ICASE;
+        }
+        if (regcomp( & hi_pat, cmdopts->pass.hi_pattern, flags) != 0) {
+            cmdopts->pass.hi_pattern = NULL;
+        } else {
+            interact_hi = true;
+        }
+    }
 
     while (true) {
         /* SIGWINCH */
@@ -352,11 +389,14 @@ cli_loop(void)
             if (msg_in->tag == TAG_ACK) {
                 cli_disconn(0);
             } else if (msg_in->tag == TAG_OUTPUT) {
-                if (0) {
-                    write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
+                if (interact_hi) {
+                    /*
+                     * FIXME: msg_in->v_raw may have NULL bytes
+                     */
+                    cli_highlight(STDOUT_FILENO, (char *)msg_in->v_raw, msg_in->length,
+                                  & hi_pat, cmdopts->pass.hi_color);
                 } else {
-                    /* FIXME: remove NULL bytes from `msg_in->v_raw' */
-                    cli_write_regsub(STDOUT_FILENO, (char *)msg_in->v_raw, & reg_ps1, "BASH-\033[31m$1\033[m% ", 0);
+                    write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
                 }
             } else if (msg_in->tag == TAG_EXPOUT_TEXT) {
                 write(STDOUT_FILENO, msg_in->v_text, msg_in->length);
