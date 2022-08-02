@@ -100,6 +100,8 @@ cli_hello(void)
                 v2n_tag(msg->tag, NULL, 0) );
         }
     }
+
+    msg_free( & msg);
 }
 
 static void
