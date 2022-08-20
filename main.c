@@ -544,6 +544,9 @@ getargs(int argc, char **argv)
                 g.cmdopts.pass.lookback = arg2uint(next);
             } else if (str1of(arg, "-nodetach", "-nodet", "-nod", NULL) ) {
                 g.cmdopts.pass.no_detach = true;
+            } else if (str1of(arg, "-subst", "-sub", NULL) ) {
+                next = nextarg(argv, arg, & i);
+                st->subs[st->nsubs++] = next;
             } else {
                 unexpected_arg = true;
                 break;

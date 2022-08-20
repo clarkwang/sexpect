@@ -11,6 +11,7 @@ extern char * const VERSION_;
 
 #define ARRAY_SIZE(a)      ( sizeof(a) / sizeof(a[0]) )
 #define streq(s1, s2)      (strcmp(s1, s2) == 0)
+#define strne(s1, s2)      (strcmp(s1, s2) != 0)
 #define strcaseeq(s1, s2)  (strcasecmp(s1, s2) == 0)
 #define isodigit(c)        ( (c) >= '0' && (c) <= '7')
 
@@ -25,6 +26,7 @@ extern char * const VERSION_;
 #define MAX(a, b) ( (a) > (b) ? (a) : (b) )
 
 #define MAX_EXPBUF_PEEK 4096
+#define MAX_SUBST       10
 #define PASS_MAGIC      0x4a55575a /* JUWZ */
 #define PASS_MAX_MSG    (64 * 1024)
 #define PASS_MAX_SEND   1024
@@ -237,8 +239,13 @@ struct st_pass {
     int    expflags;
     char * pattern;
     bool   cstring;
-    bool   no_capture;
-    int    lookback;
+    int    lookback;    /* expect, interact */
+
+    /*
+     * interact -subst PATTERN::REPLACE
+     */
+    int    nsubs;       
+    char * subs[MAX_SUBST];
 };
 
 struct st_cmdopts {
@@ -307,6 +314,7 @@ ssize_t  msg_disconn(int fd);
 ssize_t read_if_ready(int fd, char *buf, size_t n);
 ssize_t readn(int fd, void *ptr, size_t n);
 ssize_t writen(int fd, const void *ptr, size_t n);
+void *  Realloc(void ** ptr, size_t size);
 
 void cli_main(struct st_cmdopts * cmdopts);
 void serv_main(struct st_cmdopts * cmdopts);

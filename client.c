@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <termios.h>
 #include <signal.h>
+#include <regex.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -15,6 +16,30 @@
 #include "proto.h"
 #include "pty.h"
 
+#define SUBST_SEP "::"
+
+struct subst_repl_part {
+    enum {
+        REPLACE_LITERAL = 1,
+        REPLACE_MATCH   = 2,
+    } type;
+
+    union {
+        char * str;
+        int    match;
+    };
+};
+
+struct subst_repl {
+    int nparts;
+    struct subst_repl_part * parts;
+};
+
+struct subst_spec {
+    regex_t pat;
+    struct subst_repl repl;
+};
+
 static struct {
     struct st_cmdopts * cmdopts;
 
@@ -23,6 +48,9 @@ static struct {
     struct termios saved_termios;
     bool reset_on_exit;
     bool received_winch;
+
+    int               nsubs;
+    struct subst_spec subs[MAX_SUBST];
 } g;
 
 static void
@@ -216,6 +244,86 @@ cli_dump_cstring(int num, uint8_t * buf)
 }
 
 static void
+cli_subst(char * s)
+{
+    regmatch_t matches[10], * match = NULL;
+    int re_flags;
+    int fd, i, k;
+    struct subst_repl * repl = NULL; 
+    struct subst_repl_part * part = NULL;
+
+#if 0
+    /* don't do this */
+    re_flags = REG_NOTBOL | REG_NOTEOL;
+#else
+    re_flags = 0;
+#endif
+
+    fd = STDIN_FILENO;
+
+    while (s[0]) {
+        /* check each -subst PATTERN */
+        repl = NULL;
+        for (i = 0; i < g.nsubs; ++i) {
+            if (regexec( & g.subs[i].pat, s, 10, matches, re_flags) == 0) {
+                repl = & g.subs[i].repl;
+                break;
+            }
+        }
+
+        /* found no matches */
+        if (repl == NULL) {
+            write(fd, s, strlen(s) );
+            return;
+        }
+
+        /* the partial string before the match */
+        write(fd, s, matches[0].rm_so);
+
+        for (k = 0; k < repl->nparts; ++k) {
+            part = & repl->parts[k];
+            if (part->type == REPLACE_LITERAL) {
+                write(fd, part->str, strlen(part->str) );
+            } else {
+                match = & matches[part->match];
+                if (match->rm_so != -1) {
+                    write(fd, s + match->rm_so, match->rm_eo - match->rm_so);
+                }
+            }
+        }
+
+        s += matches[0].rm_eo;
+    }
+}
+
+static void
+cli_subst_raw(char * raw, int size)
+{
+    char * s = NULL;
+    int n = 0, len, fd;
+
+    fd = STDIN_FILENO;
+
+    if (raw[size] != 0) {
+        return;
+    }
+
+    n = 0;
+    while (n < size) {
+        s = raw + n;
+        len = strlen(s);
+
+        cli_subst(s);
+
+        n += len;
+        if (n < size) {
+            write(fd, "", 1);
+            n++;
+        }
+    }
+}
+
+static void
 cli_loop(void)
 {
     char buf[1024];
@@ -301,7 +409,11 @@ cli_loop(void)
             if (msg_in->tag == TAG_ACK) {
                 cli_disconn(0);
             } else if (msg_in->tag == TAG_OUTPUT) {
-                write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
+                if (g.nsubs > 0) {
+                    cli_subst_raw( (void *) msg_in->v_raw, msg_in->length);
+                } else {
+                    write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
+                }
             } else if (msg_in->tag == TAG_EXPOUT_TEXT) {
                 write(STDOUT_FILENO, msg_in->v_text, msg_in->length);
                 cli_disconn(0);
@@ -417,6 +529,132 @@ cli_chkerr(void)
     exit(1);
 }
 
+static void
+cli_subst_parse_repl(struct subst_repl * repl, char * s, bool cstring)
+{
+    regex_t pat;
+    regmatch_t match;
+    char * unesc = NULL;
+    int i, inext, len, ret;
+
+    memset(repl, 0, sizeof(*repl) );
+
+    regcomp( & pat, "[(][0123456789][)]", REG_EXTENDED);
+
+    while (s[0]) {
+        inext = repl->nparts;
+        if (NULL == Realloc( (void **) & repl->parts, (++ repl->nparts) * sizeof(repl->parts[0]) ) ) {
+            fatal_sys("realloc");
+        }
+
+        ret = regexec( & pat, s, 1, & match, 0);
+        if (ret != 0) {
+            repl->parts[inext].type = REPLACE_LITERAL;
+            repl->parts[inext].str = strdup(s);
+            break;
+        }
+
+        if (match.rm_so != 0) {
+            repl->parts[inext].type = REPLACE_LITERAL;
+            repl->parts[inext].str = strndup(s, match.rm_so);
+
+            inext = repl->nparts;
+            if (NULL == Realloc( (void **) & repl->parts, (++ repl->nparts) * sizeof(repl->parts[0]) ) ) {
+                fatal_sys("realloc");
+            }
+        }
+        repl->parts[inext].type = REPLACE_MATCH;
+        repl->parts[inext].match = s[match.rm_so + 1] - '0';
+
+        s += match.rm_eo;
+    }
+
+    for (i = 0; i < repl->nparts; ++i) {
+        if ( ! cstring || repl->parts[i].type == REPLACE_MATCH) {
+            continue;
+        }
+
+        strunesc(repl->parts[i].str, & unesc, & len);
+        if (unesc == NULL) {
+            fatal(ERROR_USAGE, "invalid backslash escapes: %s", repl->parts[i].str);
+        } else if (strlen(unesc) != len) {
+            fatal(ERROR_USAGE, "pattern cannot include NULL bytes");
+        }
+        free(repl->parts[i].str);
+        repl->parts[i].str = unesc;
+    }
+
+    regfree( & pat);
+}
+
+static void
+cli_subst_compile(void)
+{
+    struct st_pass * pass = NULL;
+    int i, ret, re_flags, pat_len;
+    char * sep = NULL;
+    char * pat = NULL, * repl = NULL;
+    char * pat2 = NULL;
+
+    if (strne(g.cmdopts->cmd, CMD_INTERACT) ) {
+        return;
+    }
+
+    pass = & g.cmdopts->pass;
+    if (pass->nsubs == 0) {
+        return;
+    }
+
+    re_flags = REG_EXTENDED;
+    if (pass->expflags & PASS_EXPECT_ICASE) {
+        re_flags |= REG_ICASE;
+    }
+
+    g.nsubs = pass->nsubs;
+    for (i = 0; i < g.nsubs; ++i) {
+        sep = strstr(pass->subs[i], SUBST_SEP);
+        if (sep == NULL) {
+            /* `::' not found */
+            fatal(ERROR_USAGE, "format error: %s", pass->subs[i]);
+        }
+
+        /* PATTERN cannot be empty */
+        if (sep == pass->subs[i]) {
+            fatal(ERROR_USAGE, "pattern cannot be empty");
+        }
+
+        repl = sep + strlen(SUBST_SEP);
+
+        /* get the PATTERN part */
+        pat = strndup(pass->subs[i], sep - pass->subs[i]);
+        if (pat == NULL) {
+            fatal_sys("strndup");
+        }
+
+        /* -cstring PATTERN */
+        if (pass->cstring) {
+            strunesc(pat, & pat2, & pat_len);
+            if (pat2 == NULL) {
+                fatal(ERROR_USAGE, "invalid backslash escapes: %s", pat);
+            } else if (strlen(pat2) != pat_len) {
+                fatal(ERROR_USAGE, "pattern cannot include NULL bytes");
+            }
+            free(pat);
+            pat = pat2;
+        }
+
+        /* compile the PATTERN */
+        ret = regcomp( & g.subs[i].pat, pat, re_flags); 
+        if (ret != 0) {
+            fatal(ERROR_USAGE, "invalid ERE pattern: %s", pat);
+        }
+        free(pat);
+
+        /* parse the REPLACE part */
+        cli_subst_parse_repl( & g.subs[i].repl, repl, pass->cstring);
+    }
+}
+
 void
 cli_main(struct st_cmdopts * cmdopts)
 {
@@ -430,6 +668,8 @@ cli_main(struct st_cmdopts * cmdopts)
         cli_chkerr();
         return;
     }
+
+    cli_subst_compile();
 
     sig_handle(SIGPIPE, SIG_IGN);
 

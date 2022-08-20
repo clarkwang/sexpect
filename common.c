@@ -18,7 +18,7 @@
 #define V2N_MAP(v) { v, #v }
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.3.12";
+char * const VERSION_ = "2.3.13";
 
 static struct {
     int debug;
@@ -282,6 +282,19 @@ Clock_diff(struct timespec * t1, struct timespec * t2)
     d2 = t2->tv_sec + t2->tv_nsec / 1e9;
 
     return fabs(d2 - d1);
+}
+
+void *
+Realloc(void ** pptr, size_t size)
+{
+    void * ptr;
+
+    ptr = realloc(* pptr, size);
+    if (ptr) {
+        * pptr = ptr;
+    }
+
+    return ptr;
 }
 
 bool
