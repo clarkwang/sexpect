@@ -244,6 +244,86 @@ cli_dump_cstring(int num, uint8_t * buf)
 }
 
 static void
+cli_subst(char * s)
+{
+    regmatch_t matches[10], * match = NULL;
+    int re_flags;
+    int fd, i, k;
+    struct subst_repl * repl = NULL; 
+    struct subst_repl_part * part = NULL;
+
+#if 0
+    /* don't do this */
+    re_flags = REG_NOTBOL | REG_NOTEOL;
+#else
+    re_flags = 0;
+#endif
+
+    fd = STDIN_FILENO;
+
+    while (s[0]) {
+        /* check each -subst PATTERN */
+        repl = NULL;
+        for (i = 0; i < g.nsubs; ++i) {
+            if (regexec( & g.subs[i].pat, s, 10, matches, re_flags) == 0) {
+                repl = & g.subs[i].repl;
+                break;
+            }
+        }
+
+        /* found no matches */
+        if (repl == NULL) {
+            write(fd, s, strlen(s) );
+            return;
+        }
+
+        /* the partial string before the match */
+        write(fd, s, matches[0].rm_so);
+
+        for (k = 0; k < repl->nparts; ++k) {
+            part = & repl->parts[k];
+            if (part->type == REPLACE_LITERAL) {
+                write(fd, part->str, strlen(part->str) );
+            } else {
+                match = & matches[part->match];
+                if (match->rm_so != -1) {
+                    write(fd, s + match->rm_so, match->rm_eo - match->rm_so);
+                }
+            }
+        }
+
+        s += matches[0].rm_eo;
+    }
+}
+
+static void
+cli_subst_raw(char * raw, int size)
+{
+    char * s = NULL;
+    int n = 0, len, fd;
+
+    fd = STDIN_FILENO;
+
+    if (raw[size] != 0) {
+        return;
+    }
+
+    n = 0;
+    while (n < size) {
+        s = raw + n;
+        len = strlen(s);
+
+        cli_subst(s);
+
+        n += len;
+        if (n < size) {
+            write(fd, "", 1);
+            n++;
+        }
+    }
+}
+
+static void
 cli_loop(void)
 {
     char buf[1024];
@@ -329,7 +409,11 @@ cli_loop(void)
             if (msg_in->tag == TAG_ACK) {
                 cli_disconn(0);
             } else if (msg_in->tag == TAG_OUTPUT) {
-                write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
+                if (g.nsubs > 0) {
+                    cli_subst_raw( (void *) msg_in->v_raw, msg_in->length);
+                } else {
+                    write(STDOUT_FILENO, msg_in->v_raw, msg_in->length);
+                }
             } else if (msg_in->tag == TAG_EXPOUT_TEXT) {
                 write(STDOUT_FILENO, msg_in->v_text, msg_in->length);
                 cli_disconn(0);
