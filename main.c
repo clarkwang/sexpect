@@ -16,6 +16,10 @@
 #define str_true(s)   str1of(s, "1", "on",  "yes", "y", "true",  NULL)
 #define str_false(s)  str1of(s, "0", "off", "no",  "n", "false", NULL)
 
+#define OPT_nocase(s)   str1of(s, "-nocase", "-icase", "-i", NULL)
+#define OPT_cstring(s)  str1of(s, "-cstring", "-cstr", "-c", NULL)
+#define OPT_lookback(s) str1of(s, "-lookback", "-lb", NULL)
+
 static struct {
     char * progname;
     struct st_cmdopts cmdopts;
@@ -434,9 +438,9 @@ getargs(int argc, char **argv)
                 } else if (str1of(arg, "-glob", "-gl", NULL) ) {
                     st->expflags |= PASS_EXPECT_GLOB;
                 }
-            } else if (str1of(arg, "-nocase", "-icase", "-ic", "-i", NULL) ) {
+            } else if (OPT_nocase(arg) ) {
                 st->expflags |= PASS_EXPECT_ICASE;
-            } else if (str1of(arg, "-cstring", "-cstr", "-c", NULL) ) {
+            } else if (OPT_cstring(arg) ) {
                 st->cstring = true;
             } else if (streq(arg, "-eof") ) {
                 st->expflags |= PASS_EXPECT_EOF;
@@ -446,7 +450,7 @@ getargs(int argc, char **argv)
                 if (st->timeout < 0) {
                     st->timeout = -1;
                 }
-            } else if (str1of(arg, "-lookback", "-lb", NULL) ) {
+            } else if (OPT_lookback(arg) ) {
                 next = nextarg(argv, arg, & i);
                 g.cmdopts.pass.lookback = arg2uint(next);
             } else if (arg[0] == '-') {
@@ -531,11 +535,11 @@ getargs(int argc, char **argv)
                 next = nextarg(argv, arg, & i);
                 st->pattern = next;
                 st->expflags |= PASS_EXPECT_ERE;
-            } else if (str1of(arg, "-nocase", "-icase", "-ic", "-i", NULL) ) {
+            } else if (OPT_nocase(arg) ) {
                 st->expflags |= PASS_EXPECT_ICASE;
-            } else if (str1of(arg, "-cstring", "-cstr", "-c", NULL) ) {
+            } else if (OPT_cstring(arg) ) {
                 st->cstring = true;
-            } else if (str1of(arg, "-lookback", "-lb", NULL) ) {
+            } else if (OPT_lookback(arg) ) {
                 next = nextarg(argv, arg, & i);
                 g.cmdopts.pass.lookback = arg2uint(next);
             } else if (str1of(arg, "-nodetach", "-nodet", "-nod", NULL) ) {
@@ -731,7 +735,7 @@ getargs(int argc, char **argv)
 
             /* wait */
         } else if (streq(g.cmdopts.cmd, CMD_WAIT) ) {
-            if (str1of(arg, "-lookback", "-lb", NULL) ) {
+            if (OPT_lookback(arg) ) {
                 next = nextarg(argv, arg, & i);
                 g.cmdopts.pass.lookback = arg2uint(next);
             } else {
