@@ -609,6 +609,9 @@ cli_subst_compile(void)
     if (pass->expflags & PASS_EXPECT_ICASE) {
         re_flags |= REG_ICASE;
     }
+    if (pass->expflags & PASS_EXPECT_NEWLINE) {
+        re_flags |= REG_NEWLINE;
+    }
 
     g.nsubs = pass->nsubs;
     for (i = 0; i < g.nsubs; ++i) {

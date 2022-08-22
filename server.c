@@ -668,6 +668,9 @@ expect_ere(void)
     if ((g.conn.pass.expflags & PASS_EXPECT_ICASE) != 0) {
         reflags |= REG_ICASE;
     }
+    if ((g.conn.pass.expflags & PASS_EXPECT_NEWLINE) != 0) {
+        reflags |= REG_NEWLINE;
+    }
 
     ret = regcomp( & re, g.conn.pass.pattern, reflags);
     if (ret != 0) {

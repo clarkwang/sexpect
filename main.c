@@ -19,6 +19,7 @@
 #define OPT_nocase(s)   str1of(s, "-nocase", "-icase", "-i", NULL)
 #define OPT_cstring(s)  str1of(s, "-cstring", "-cstr", "-c", NULL)
 #define OPT_lookback(s) str1of(s, "-lookback", "-lb", NULL)
+#define OPT_anchor(s)   str1of(s, "-anchor-newline", "-anchor", "-REG_NEWLINE", NULL)
 
 static struct {
     char * progname;
@@ -440,6 +441,8 @@ getargs(int argc, char **argv)
                 }
             } else if (OPT_nocase(arg) ) {
                 st->expflags |= PASS_EXPECT_ICASE;
+            } else if (OPT_anchor(arg) ) {
+                st->expflags |= PASS_EXPECT_NEWLINE;
             } else if (OPT_cstring(arg) ) {
                 st->cstring = true;
             } else if (streq(arg, "-eof") ) {
@@ -537,6 +540,8 @@ getargs(int argc, char **argv)
                 st->expflags |= PASS_EXPECT_ERE;
             } else if (OPT_nocase(arg) ) {
                 st->expflags |= PASS_EXPECT_ICASE;
+            } else if (OPT_anchor(arg) ) {
+                st->expflags |= PASS_EXPECT_NEWLINE;
             } else if (OPT_cstring(arg) ) {
                 st->cstring = true;
             } else if (OPT_lookback(arg) ) {

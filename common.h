@@ -140,6 +140,7 @@ enum {
     PASS_EXPECT_EXIT  = 0x10,   /* interact, wait */
     PASS_EXPECT_ICASE = 0x20,   /* expect -nocase */
     PASS_EXPECT_NOSUB = 0x40,
+    PASS_EXPECT_NEWLINE = 0x80, /* REG_NEWLINE */
 };
 
 enum {
