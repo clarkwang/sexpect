@@ -769,6 +769,9 @@ getargs(int argc, char **argv)
         if (count1bits(flags) > 1) {
             fatal(ERROR_USAGE, "-eof, -exact, -glob and -re are exclusive");
         }
+        if ( (st->expflags & PASS_EXPECT_NEWLINE) && ! (st->expflags & PASS_EXPECT_ERE) ) {
+            fatal(ERROR_USAGE, "-anchor-newline is only for -re");
+        }
 
         if (st->pattern != NULL) {
             if (st->cstring) {
