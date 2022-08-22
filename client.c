@@ -586,6 +586,8 @@ cli_subst_parse_repl(struct subst_repl * repl, char * s, bool cstring)
         free(repl->parts[i].str);
         repl->parts[i].str = unesc;
     }
+
+    regfree( & pat);
 }
 
 static void
