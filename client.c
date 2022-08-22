@@ -541,9 +541,6 @@ cli_subst_parse_repl(struct subst_repl * repl, char * s, bool cstring)
 
     regcomp( & pat, "[(][0123456789][)]", REG_EXTENDED);
 
-#if 0
-    printf("s=%s\n", s);
-#endif
     while (s[0]) {
         inext = repl->nparts;
         if (NULL == Realloc( (void **) & repl->parts, (++ repl->nparts) * sizeof(repl->parts[0]) ) ) {
@@ -673,23 +670,6 @@ cli_main(struct st_cmdopts * cmdopts)
     }
 
     cli_subst_compile();
-#if 0
-    {
-        int i, k;
-        struct subst_repl_part * part;
-        for (i = 0; i < g.nsubs; ++i) {
-            printf("PATTERN::REPLACE[%d]\n", i);
-            for (k = 0; k < g.subs[i].repl.nparts; ++k) {
-                part = & g.subs[i].repl.parts[k];
-                if (part->type == REPLACE_LITERAL) {
-                    printf("> %s\n", part->str);
-                } else {
-                    printf("> %d\n", part->match);
-                }
-            }
-        }
-    }
-#endif
 
     sig_handle(SIGPIPE, SIG_IGN);
 
