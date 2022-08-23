@@ -19,7 +19,7 @@
 #define OPT_nocase(s)   str1of(s, "-nocase", "-icase", "-i", NULL)
 #define OPT_cstring(s)  str1of(s, "-cstring", "-cstr", "-c", NULL)
 #define OPT_lookback(s) str1of(s, "-lookback", "-lb", NULL)
-#define OPT_anchor(s)   str1of(s, "-anchor-newline", "-anchor", "-REG_NEWLINE", NULL)
+#define OPT_anchor(s)   str1of(s, "-anchor-newline", "-anchor", NULL)
 
 static struct {
     char * progname;
