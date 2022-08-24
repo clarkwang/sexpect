@@ -167,6 +167,10 @@ cli_disconn(int exitcode)
         }
     }
 
+    if (msg != NULL) {
+        msg_free( & msg);
+    }
+
     if (exitcode >= 0) {
         exit(exitcode);
     }
@@ -332,9 +336,15 @@ cli_loop(void)
     int r, nread;
     int fd_max;
     ttlv_t * msg_out = NULL;
-    ttlv_t * msg_in = NULL;
+    /*
+     * defined as "static" so it can be freed in atexit() callbacks
+     */
+    static ttlv_t * msg_in = NULL;
     struct st_cmdopts * cmdopts = g.cmdopts;
     struct timeval timeout;
+
+    /* yes this may look a bit ugly. */
+    atexit_push( (atexit_cb) msg_free, & msg_in);
 
     while (true) {
         /* SIGWINCH */
@@ -504,6 +514,10 @@ cli_loop(void)
                 fatal(ERROR_PROTO, NULL);
             }
         }
+
+        if (msg_in != NULL) {
+            msg_free( & msg_in);
+        }
     }
 }
 
@@ -588,6 +602,24 @@ cli_subst_parse_repl(struct subst_repl * repl, char * s, bool cstring)
 }
 
 static void
+cli_subst_free(void * _null)
+{
+    int i, k;
+    struct subst_repl_part * part = _null;
+
+    for (i = 0; i < g.nsubs; ++i) {
+        regfree( & g.subs[i].pat);
+        for (k = 0; k < g.subs[i].repl.nparts; ++k) {
+            part = & g.subs[i].repl.parts[k];
+            if (part->type == REPLACE_LITERAL) {
+                free(part->str);
+            }
+        }
+        free(g.subs[i].repl.parts);
+    }
+}
+
+static void
 cli_subst_compile(void)
 {
     struct st_pass * pass = NULL;
@@ -656,6 +688,8 @@ cli_subst_compile(void)
         /* parse the REPLACE part */
         cli_subst_parse_repl( & g.subs[i].repl, repl, pass->cstring);
     }
+
+    atexit_push(cli_subst_free, NULL);
 }
 
 void

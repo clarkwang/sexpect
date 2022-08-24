@@ -47,6 +47,8 @@ extern char * const VERSION_;
 #define CMD_VERSION   "version"
 #define CMD_WAIT      "wait"
 
+typedef void (* atexit_cb)(void *);
+
 enum {
     /* THE START */
     ERROR_START__ = 200,
@@ -316,6 +318,7 @@ ssize_t read_if_ready(int fd, char *buf, size_t n);
 ssize_t readn(int fd, void *ptr, size_t n);
 ssize_t writen(int fd, const void *ptr, size_t n);
 void *  Realloc(void ** ptr, size_t size);
+int     atexit_push(atexit_cb func, void * arg);
 
 void cli_main(struct st_cmdopts * cmdopts);
 void serv_main(struct st_cmdopts * cmdopts);

@@ -1140,6 +1140,9 @@ serv_init(void)
     g.ntotal    = 0;
     g.rawoffset = 0;
     g.expoffset = 0;
+
+    atexit_push(free, g.rawbuf);
+    atexit_push(free, g.expbuf);
 }
 
 void
@@ -1223,6 +1226,7 @@ serv_main(struct st_cmdopts * cmdopts)
             fatal_sys("realpath(%s)", cmdopts->sockpath);
         } else {
             cmdopts->sockpath = fullpath;
+            atexit_push(free, fullpath);
         }
     }
 

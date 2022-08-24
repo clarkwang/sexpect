@@ -17,11 +17,20 @@
 
 #define V2N_MAP(v) { v, #v }
 
+struct st_atexit {
+    atexit_cb func;
+    void    * arg;
+};
+
 char * const SEXPECT  = "sexpect";
 char * const VERSION_ = "2.3.14";
 
 static struct {
     int debug;
+    struct {
+        int count;
+        struct st_atexit * exits;
+    } atexit;
 } g;
 
 static struct v2n_map g_v2n_error[] = {
@@ -893,6 +902,8 @@ msg_recv(int fd)
         if (buf == NULL) {
             fatal_sys("malloc(%d) returned NULL", bufsize);
         }
+
+        atexit_push(free, buf);
     }
 
     /* the magic number */
@@ -955,6 +966,8 @@ msg_send(int fd, ttlv_t *msg)
             fatal_sys("malloc(%d) returned NULL", bufsize);
             return -1;
         }
+
+        atexit_push(free, buf);
     }
 
     size = ttlv_calc_size(msg);
@@ -1014,4 +1027,38 @@ msg_disconn(int fd)
     msg_free(&msg);
 
     return ret;
+}
+
+static void
+atexit_cleanup(void)
+{
+    int i;
+
+    for (i = g.atexit.count - 1; i >= 0; --i) {
+        g.atexit.exits[i].func(g.atexit.exits[i].arg);
+    }
+
+    free(g.atexit.exits);
+}
+
+int
+atexit_push(atexit_cb func, void * arg)
+{
+    static bool firstcall = true;
+    struct st_atexit * pnew;
+
+    if (firstcall) {
+        firstcall = false;
+        atexit(atexit_cleanup);
+    }
+
+    pnew = realloc(g.atexit.exits, (g.atexit.count + 1) * sizeof(struct st_atexit) );
+    if (pnew == NULL) {
+        return 0;
+    }
+
+    g.atexit.exits = pnew;
+    g.atexit.exits[g.atexit.count].func = func;
+    g.atexit.exits[g.atexit.count].arg  = arg;
+    return ++g.atexit.count;
 }
