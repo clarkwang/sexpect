@@ -2,12 +2,12 @@
 .\"     Title: sexpect
 .\"    Author: [see the "AUTHOR(S)" section]
 .\" Generator: Asciidoctor 2.0.17
-.\"      Date: 2022-07-23
+.\"      Date: 2022-09-16
 .\"    Manual: sexpect manual
-.\"    Source: sexpect 2.3.12
+.\"    Source: sexpect 2.3.14
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2022-07-23" "sexpect 2.3.12" "sexpect manual"
+.TH "SEXPECT" "1" "2022-09-16" "sexpect 2.3.14" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -198,6 +198,17 @@ expect \-timeout 0 \-re \*(Aq.*\*(Aq
 .sp
 The \*(Aq\fBexpect\fP\*(Aq sub\-command supports the following options:
 .sp
+\-anchor\-newline | \-anchor
+.RS 4
+Used with \*(Aq\fB\-re PATTERN\fP\*(Aq. Compile the \fIPATTERN\fP for newline\-sensitive matching
+by passing the \fBREG_NEWLINE\fP flag to \fBregcomp(3)\fP.
+By default, newline is a completely ordinary
+character with no special meaning.  With this flag, bracket expressions \fB[^...]\fP
+and \fB\*(Aq.\*(Aq\fP never match newline, a \fB\*(Aq^\*(Aq\fP anchor matches the null string after any
+newline in the string in addition to its normal function, and the \fB\*(Aq$\*(Aq\fP anchor matches the
+null string before any newline in the string in addition to its normal function.
+.RE
+.sp
 \-cstring | \-cstr | \-c
 .RS 4
 C style backslash escapes would be recognized and replaced in \fIPATTERN\fP.
@@ -387,17 +398,39 @@ After a successful match, you can use \*(Aq\fBexpect_out\fP\*(Aq to get substrin
 matches.
 .RE
 .sp
+<\-subst | \-sub> PATTERN::REPLACE
+.RS 4
+Dynamically monitor output from the spawned process and if the output
+matches the \fBPATTERN\fP then change the matching part to \fBREPLACE\fP.
+.sp
+\fBREPLACE\fP can include \fB(0)\fP, \fB(1)\fP, \fB(2)\fP, ..., \fB(9)\fP for RE match groups.
+\fB(0)\fP is for the whole match and \fB(1)\fP .. \fB(9)\fP for corresponding subgroups.
+For example, \fB\-subst "(foo)(bar)::(0)\-(1)\-(2)"\fP would change \fB"foobar"\fP to
+\fB"foobar\-foo\-bar"\fP.
+.sp
+The \fBPATTERN\fP cannot include "::".
+.sp
+At most 10 \fB\-subst\fP options can be specified.
+.RE
+.sp
 \-cstring | \-cstr | \-c
 .RS 4
-Used with \*(Aq\fB\-re PATTERN\fP\*(Aq.
-C style backslash escapes would be recognized and replaced in \fIPATTERN\fP.
+Used with \*(Aq\fB\-re PATTERN\fP\*(Aq or \*(Aq\fB\-subst PATTERN::REPLACE\fP\*(Aq.
+C style backslash escapes would be recognized and replaced in \fIPATTERN\fP
+or \fIREPLACE\fP.
 See sub\-command \*(Aq\fBsend\fP\*(Aq for the list of supported backslash escapes.
 .RE
 .sp
 \-nocase | \-icase | \-i
 .RS 4
-Used with \*(Aq\fB\-re PATTERN\fP\*(Aq.
+Used with \*(Aq\fB\-re PATTERN\fP\*(Aq or \*(Aq\fB\-subst PATTERN::REPLACE\fP\*(Aq.
 Ignore case when matching \fIPATTERN\fP.
+.RE
+.sp
+\-anchor\-newline | \-anchor
+.RS 4
+Used with \*(Aq\fB\-re PATTERN\fP\*(Aq or \*(Aq\fB\-subst PATTERN::REPLACE\fP\*(Aq.
+See sub\-command \*(Aq\fBexpect\fP\*(Aq for more details..
 .RE
 .SS "wait (w)"
 .sp

@@ -1,6 +1,6 @@
 = sexpect(1)
 :doctype: manpage
-:sexpect-version: 2.3.12
+:sexpect-version: 2.3.14
 :man manual: sexpect manual
 :man source: sexpect {sexpect-version}
 :page-layout: base
@@ -135,6 +135,15 @@ Exit status: ::
         expect -timeout 0 -re '.*'
 
 The '*expect*' sub-command supports the following options:
+
+-anchor-newline | -anchor::
+    Used with '*-re PATTERN*'. Compile the _PATTERN_ for newline-sensitive matching
+    by passing the *REG_NEWLINE* flag to *regcomp(3)*.
+    By default, newline is a completely ordinary
+    character with no special meaning.  With this flag, bracket expressions *[^...]*
+    and *'.'* never match newline, a *'^'* anchor matches the null string after any
+    newline in the string in addition to its normal function, and the *'$'* anchor matches the
+    null string before any newline in the string in addition to its normal function.
 
 -cstring | -cstr | -c::
     C style backslash escapes would be recognized and replaced in _PATTERN_.
@@ -273,14 +282,32 @@ The '*interact*' sub-command supports the following options:
     After a successful match, you can use '*expect_out*' to get substring
     matches.
 
+\<-subst | -sub> PATTERN::REPLACE ::
+    Dynamically monitor output from the spawned process and if the output
+    matches the *PATTERN* then change the matching part to *REPLACE*.
++
+*REPLACE* can include *(0)*, *(1)*, *(2)*, ..., *(9)* for RE match groups.
+*(0)* is for the whole match and *(1)* .. *(9)* for corresponding subgroups.
+For example, *-subst "(foo)(bar)::(0)-(1)-(2)"* would change *"foobar"* to
+*"foobar-foo-bar"*.
++
+The *PATTERN* cannot include "::".
++
+At most 10 *-subst* options can be specified.
+
 -cstring | -cstr | -c ::
-    Used with '*-re PATTERN*'.
-    C style backslash escapes would be recognized and replaced in _PATTERN_.
+    Used with '*-re PATTERN*' or '*-subst PATTERN::REPLACE*'.
+    C style backslash escapes would be recognized and replaced in _PATTERN_
+    or _REPLACE_.
     See sub-command '*send*' for the list of supported backslash escapes.
 
 -nocase | -icase | -i ::
-    Used with '*-re PATTERN*'.
+    Used with '*-re PATTERN*' or '*-subst PATTERN::REPLACE*'.
     Ignore case when matching _PATTERN_.
+
+-anchor-newline | -anchor ::
+    Used with '*-re PATTERN*' or '*-subst PATTERN::REPLACE*'.
+    See sub-command '*expect*' for more details..
 
 === wait (w)
 

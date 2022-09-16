@@ -73,6 +73,7 @@ expect (exp, ex, x)\n\
     sexpect expect [OPTION]\n\
 \n\
     Options:\n\
+        -anchor-newline | -anchor\n\
         -cstring | -cstr | -c\n\
         -lookback N | -lb N\n\
         -nocase | -icase | -i\n\
@@ -100,7 +101,9 @@ interact (i)\n\
         -nodetach | -nodet\n\
         -cstring | -cstr | -c\n\
         -nocase | -icase | -i\n\
+        -anchor-newline | -anchor\n\
         -re PATTERN\n\
+        <-subst | -sub> PATTERN::REPLACE\n\
 \n\
 wait (w)\n\
 --------\n\
@@ -147,6 +150,7 @@ get\n\
     Options:\n\
         -all | -a\n\
         -autowait | -nowait\n\
+        <-expect-buf | -expbuf> N\n\
         -idle-close | -idle\n\
         -nonblock | -nb\n\
         -pid\n\

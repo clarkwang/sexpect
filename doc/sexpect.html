@@ -632,6 +632,16 @@ If neither <em>PATTERN</em> nor <strong>-eof</strong> is specified, then it defa
 </div>
 <div class="dlist">
 <dl>
+<dt class="hdlist1">-anchor-newline | -anchor</dt>
+<dd>
+<p>Used with '<strong>-re PATTERN</strong>'. Compile the <em>PATTERN</em> for newline-sensitive matching
+by passing the <strong>REG_NEWLINE</strong> flag to <strong>regcomp(3)</strong>.
+By default, newline is a completely ordinary
+character with no special meaning.  With this flag, bracket expressions <strong>[^&#8230;&#8203;]</strong>
+and <strong>'.'</strong> never match newline, a <strong>'^'</strong> anchor matches the null string after any
+newline in the string in addition to its normal function, and the <strong>'$'</strong> anchor matches the
+null string before any newline in the string in addition to its normal function.</p>
+</dd>
 <dt class="hdlist1">-cstring | -cstr | -c</dt>
 <dd>
 <p>C style backslash escapes would be recognized and replaced in <em>PATTERN</em>.
@@ -821,16 +831,39 @@ the RE pattern.
 After a successful match, you can use '<strong>expect_out</strong>' to get substring
 matches.</p>
 </dd>
+<dt class="hdlist1">&lt;-subst | -sub&gt; PATTERN::REPLACE </dt>
+<dd>
+<p>Dynamically monitor output from the spawned process and if the output
+matches the <strong>PATTERN</strong> then change the matching part to <strong>REPLACE</strong>.</p>
+<div class="paragraph">
+<p><strong>REPLACE</strong> can include <strong>(0)</strong>, <strong>(1)</strong>, <strong>(2)</strong>, &#8230;&#8203;, <strong>(9)</strong> for RE match groups.
+<strong>(0)</strong> is for the whole match and <strong>(1)</strong> .. <strong>(9)</strong> for corresponding subgroups.
+For example, <strong>-subst "(foo)(bar)::(0)-(1)-(2)"</strong> would change <strong>"foobar"</strong> to
+<strong>"foobar-foo-bar"</strong>.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>PATTERN</strong> cannot include "::".</p>
+</div>
+<div class="paragraph">
+<p>At most 10 <strong>-subst</strong> options can be specified.</p>
+</div>
+</dd>
 <dt class="hdlist1">-cstring | -cstr | -c </dt>
 <dd>
-<p>Used with '<strong>-re PATTERN</strong>'.
-C style backslash escapes would be recognized and replaced in <em>PATTERN</em>.
+<p>Used with '<strong>-re PATTERN</strong>' or '<strong>-subst PATTERN::REPLACE</strong>'.
+C style backslash escapes would be recognized and replaced in <em>PATTERN</em>
+or <em>REPLACE</em>.
 See sub-command '<strong>send</strong>' for the list of supported backslash escapes.</p>
 </dd>
 <dt class="hdlist1">-nocase | -icase | -i </dt>
 <dd>
-<p>Used with '<strong>-re PATTERN</strong>'.
+<p>Used with '<strong>-re PATTERN</strong>' or '<strong>-subst PATTERN::REPLACE</strong>'.
 Ignore case when matching <em>PATTERN</em>.</p>
+</dd>
+<dt class="hdlist1">-anchor-newline | -anchor </dt>
+<dd>
+<p>Used with '<strong>-re PATTERN</strong>' or '<strong>-subst PATTERN::REPLACE</strong>'.
+See sub-command '<strong>expect</strong>' for more details..</p>
 </dd>
 </dl>
 </div>
@@ -1138,7 +1171,7 @@ open an issue at <a href="https://github.com/clarkwang/sexpect/issues/" class="b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-07-23 00:27:28 +0800
+Last updated 2022-09-16 22:26:18 +0800
 </div>
 </div>
 </body>
