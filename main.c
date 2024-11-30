@@ -1,5 +1,5 @@
 
-#if defined(__gnu_linux__) || defined(__CYGWIN__)
+#if defined(__gnu_linux__) || defined(__CYGWIN__) || defined(__UCLIBC__)
 #define _GNU_SOURCE
 #endif
 
