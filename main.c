@@ -1,7 +1,5 @@
 
-#if defined(__gnu_linux__) || defined(__CYGWIN__)
 #define _GNU_SOURCE
-#endif
 
 #include <fcntl.h>
 #include <limits.h>
