@@ -4,7 +4,9 @@ bashexp() { sexpect -s /tmp/sexpect-bash-$$.sock "$@"; }
 pythexp() { sexpect -s /tmp/sexpect-pyth-$$.sock "$@"; }
 
 ps1bash='bash-[0-9.]+[$#] $'
-ps1pyth='>>> $'
+ps1pyth='>>> '
+
+export PYTHONSTARTUP=/dev/null
 
 bashexp spawn bash --norc
 pythexp spawn python3
