@@ -22,8 +22,8 @@ sexpect send -enter 'sum=0'
 sexpect expect -re "$ps1re"
 
 for ((i = 1; i <= 200; ++i)); do
-    sexpect send -enter "(( sum += $i )); echo \$sum"
-    if ! sexpect expect -t 5 -cstr -re "(5050)?[\r\n]+$ps1re"; then
+    sexpect send -enter "(( sum += $i )); echo sum=\$sum"
+    if ! sexpect expect -t 5 -cstr -re "sum=([0-9]+).*$ps1re"; then
         fatal "failed to wait for bash prompt or the final 5050"
     fi
     out=$( sexpect expect_out -index 1 )
