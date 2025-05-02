@@ -19,7 +19,7 @@ negass_run sexpect ex -t 0 -re .
 assert_run sexpect s -cr
 assert_run sexpect ex -re "$re_ps1"
 
-assert_run sexpect s -cr 'xxd -l 1024 /dev/urandom'
+assert_run sexpect s -cr 'od -Ax -tx1 -v -N 128 /dev/urandom'
 sleep .5
 assert_run sexpect get -expbuf 100
 out=$( sexpect get -expbuf 100 )
