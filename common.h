@@ -28,8 +28,9 @@ extern char * const VERSION_;
 #define MAX_EXPBUF_PEEK 4096
 #define MAX_SUBST       10
 #define PASS_MAGIC      0x4a55575a /* JUWZ */
-#define PASS_MAX_MSG    (64 * 1024)
-#define PASS_MAX_SEND   1024
+#define PASS_MAX_MSG    (1024 * 64)
+#define PASS_MAX_SEND   (1024 * 1024)
+#define PASS_SEND_CHUNK (1024 * 4)
 #define PASS_DEF_TMOUT  -1
 #define PASS_DEF_ZOMBIE_TTL  (24 * 60 * 60)  // 24 hours
 
@@ -61,6 +62,7 @@ enum {
     ERROR_EXITED,
     ERROR_INTERNAL,
     ERROR_DETACH,
+    ERROR_PARTIAL_WRITE,
 
     /* THE END */
     ERROR_END__,
@@ -85,7 +87,7 @@ enum {
     /*
      * s2c
      */
-    TAG_ACK,
+    TAG_OK,
     TAG_OUTPUT,                 /* output from the child */
     TAG_MATCHED,                /* successful "expect" */
     TAG_EOF,                    /* EOF from child */
@@ -94,6 +96,9 @@ enum {
     TAG_TIMED_OUT,              /* "expect" timed out */
     TAG_EXPOUT_TEXT,            /* $expect_out(N,string) */
     TAG_EXPBUF,                 /* get -expect-buffer */
+    TAG_SEND_RESP,              /* struct */
+    TAG_SEND_RESP_COUNT_WRITTEN, /* int */
+    TAG_SEND_RESP_COUNT_LEFT,    /* int */
 
     /*
      * bidir
@@ -185,10 +190,12 @@ struct st_send {
     int    fd;        // send -fd FD
     int    limit;     // -limit LIMIT (for -file or -fd)
     int    sources;
+    int    zero_writes;
 
-    /* to server */
+    /* server */
     char * data;
     int    len;
+    int    len_sent;
 };
 
 struct st_expout {
@@ -316,6 +323,7 @@ ssize_t read_if_ready(int fd, char *buf, size_t n);
 ssize_t readn(int fd, void *ptr, size_t n);
 ssize_t writen(int fd, const void *ptr, size_t n);
 void *  Realloc(void ** ptr, size_t size);
+void    sleep_ms(int ms);
 
 void cli_main(struct st_cmdopts * cmdopts);
 void serv_main(struct st_cmdopts * cmdopts);

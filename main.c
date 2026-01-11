@@ -19,6 +19,7 @@
 #define OPT_lookback(s) str1of(s, "-lookback", "-lb", NULL)
 #define OPT_anchor(s)   str1of(s, "-anchor-newline", "-anchor", NULL)
 
+/* All fileds would be init'ed to NULL bytes since it's global static. */
 static struct {
     char * progname;
     struct st_cmdopts cmdopts;
@@ -861,10 +862,11 @@ getargs(int argc, char **argv)
 
             // -env VAR
         } else if (st->envvar != NULL) {
-            st->data = getenv(st->envvar);
-            if (st->data == NULL) {
+            char * envstr = getenv(st->envvar);
+            if (envstr == NULL) {
                 fatal(ERROR_USAGE, "env var not found: %s", st->envvar);
             } else {
+                st->data = strdup(envstr);
                 st->len = strlen(st->data);
             }
 
@@ -873,7 +875,7 @@ getargs(int argc, char **argv)
             st->len = st->limit;
             st->data = readfile(st->filename, & st->len);
 
-            // -file FILE -limit LIMIT
+            // -fd FD [-limit LIMIT]
         } else if (st->has_fd) {
             if (st->limit <= 0) {
                 fatal(ERROR_USAGE, "-limit must be specified for -fd");
@@ -890,8 +892,20 @@ getargs(int argc, char **argv)
 
         // This is necessary or `send -cr' alone would not work.
         if (st->data == NULL) {
-            st->data = "";
+            st->data = strdup("");
             st->len = 0;
+        }
+
+        // -enter
+        if (st->enter) {
+            if (NULL == Realloc( (void **) & st->data, st->len + 1) ) {
+                fatal_sys("realloc(%d)", st->len + 1);
+            }
+
+            st->data[st->len] = '\r';
+            st->len += 1;
+
+            st->enter = false;
         }
 
         if (st->len > PASS_MAX_SEND) {

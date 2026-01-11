@@ -284,6 +284,7 @@ static void
 serv_process_msg(void)
 {
     char buf[1024];
+    char msg_tag[64];
     ttlv_t * msg_in = NULL;
     ttlv_t * msg_out = NULL;
 
@@ -299,16 +300,16 @@ serv_process_msg(void)
         return;
     }
 
+    debug("received %s", v2n_tag(msg_in->tag, msg_tag, sizeof(msg_tag) ) );
+
     switch (msg_in->tag) {
 
     case TAG_HELLO:
-        debug("received HELLO");
         serv_hello(msg_in);
 
         break;
 
     case TAG_DISCONN:
-        debug("received DISCONN");
         serv_disconn();
 
         break;
@@ -316,18 +317,40 @@ serv_process_msg(void)
     case TAG_SEND:
     case TAG_INPUT:
         {
-            if (is_PTM_OPEN) {
-                int nwritten = write(g.fd_ptm, msg_in->v_raw, msg_in->length);
-                if (nwritten < 0) {
-                    debug("write(ptm): %s (%d)", strerror(errno), errno);
-                } else if (nwritten < msg_in->length) {
-                    debug("write(ptm) returned %d (< %d)", nwritten, msg_in->length);
+            int nwritten;
+
+            debug("msg_in->length = %d", msg_in->length);
+
+            /* Don't use writen() here. It may be blocking since it'd keep retrying. */
+            nwritten = write(g.fd_ptm, msg_in->v_raw, msg_in->length);
+            if (nwritten < 0) {
+                debug("write(ptm): %s (%d)", strerror(errno), errno);
+
+                /*
+                 * EAGAIN, EWOULDBLOCK: Resource temporarily unavailable (35)
+                 */
+                if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+                    nwritten = 0;
+                } else {
+                    /* FIXME: report error to client */
+                    break;
                 }
             }
+
+            debug("write(ptm, %d): written=%d, left=%d",
+                  msg_in->length, nwritten, msg_in->length - nwritten);
+
+            /* report send result back to client */
             if (msg_in->tag == TAG_SEND) {
-                /* FIXME: send back data which are not written to the ptm */
-                msg_out = ttlv_new_struct(TAG_ACK);
-                serv_msg_send(&msg_out, true);
+                msg_out = ttlv_new_struct(TAG_SEND_RESP);
+                ttlv_append_child(
+                    msg_out,
+                    ttlv_new_int(TAG_SEND_RESP_COUNT_WRITTEN, nwritten),
+                    ttlv_new_int(TAG_SEND_RESP_COUNT_LEFT, msg_in->length - nwritten),
+                    NULL);
+                serv_msg_send( & msg_out, true);
+
+                break;
             }
 
             break;
@@ -424,7 +447,7 @@ serv_process_msg(void)
             close(g.fd_ptm);
             g.fd_ptm = -1;
         }
-        msg_out = ttlv_new_struct(TAG_ACK);
+        msg_out = ttlv_new_struct(TAG_OK);
         serv_msg_send(&msg_out, true);
 
         break;
@@ -437,7 +460,7 @@ serv_process_msg(void)
                 debug("%s", buf);
                 msg_out = serv_new_error(ERROR_SYS, buf);
             } else {
-                msg_out = ttlv_new_struct(TAG_ACK);
+                msg_out = ttlv_new_struct(TAG_OK);
             }
             serv_msg_send(&msg_out, true);
 
@@ -464,7 +487,7 @@ serv_process_msg(void)
                 g.cmdopts->spawn.idle = t->v_int;
             }
 
-            msg_out = ttlv_new_struct(TAG_ACK);
+            msg_out = ttlv_new_struct(TAG_OK);
             serv_msg_send(&msg_out, true);
 
             break;

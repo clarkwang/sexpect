@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <arpa/inet.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -18,7 +19,7 @@
 #define V2N_MAP(v) { v, #v }
 
 char * const SEXPECT  = "sexpect";
-char * const VERSION_ = "2.3.15";
+char * const VERSION_ = "2.4.0";
 
 static struct {
     int debug;
@@ -31,6 +32,7 @@ static struct v2n_map g_v2n_error[] = {
     V2N_MAP(ERROR_GENERAL),
     V2N_MAP(ERROR_INTERNAL),
     V2N_MAP(ERROR_NOTTY),
+    V2N_MAP(ERROR_PARTIAL_WRITE),
     V2N_MAP(ERROR_PROTO),
     V2N_MAP(ERROR_SYS),
     V2N_MAP(ERROR_TIMEOUT),
@@ -39,7 +41,6 @@ static struct v2n_map g_v2n_error[] = {
 };
 
 static struct v2n_map g_v2n_tag[] = {
-    V2N_MAP(TAG_ACK),
     V2N_MAP(TAG_AUTOWAIT),
     V2N_MAP(TAG_CLOSE),
     V2N_MAP(TAG_DISCONN),
@@ -65,6 +66,7 @@ static struct v2n_map g_v2n_tag[] = {
     V2N_MAP(TAG_MATCHED),
     V2N_MAP(TAG_NOHUP),
     V2N_MAP(TAG_NONBLOCK),
+    V2N_MAP(TAG_OK),
     V2N_MAP(TAG_OUTPUT),
     V2N_MAP(TAG_PASS),
     V2N_MAP(TAG_PASS_SUBCMD),
@@ -73,6 +75,9 @@ static struct v2n_map g_v2n_tag[] = {
     V2N_MAP(TAG_PPID),
     V2N_MAP(TAG_PTSNAME),
     V2N_MAP(TAG_SEND),
+    V2N_MAP(TAG_SEND_RESP),
+    V2N_MAP(TAG_SEND_RESP_COUNT_LEFT),
+    V2N_MAP(TAG_SEND_RESP_COUNT_WRITTEN),
     V2N_MAP(TAG_SET),
     V2N_MAP(TAG_TIMED_OUT),
     V2N_MAP(TAG_TTL),
@@ -95,6 +100,9 @@ common_init(void)
     }
 }
 
+/*
+ * value -> name
+ */
 static char *
 v2n(struct v2n_map map[], int val, char *buf, size_t len)
 {
@@ -118,6 +126,9 @@ v2n(struct v2n_map map[], int val, char *buf, size_t len)
     return NULL;
 }
 
+/*
+ * value -> name
+ */
 char *
 v2n_error(int err, char *buf, size_t len)
 {
@@ -132,6 +143,9 @@ v2n_error(int err, char *buf, size_t len)
     return buf;
 }
 
+/*
+ * value -> name
+ */
 char *
 v2n_tag(int tag, char *buf, size_t len)
 {
@@ -142,7 +156,7 @@ v2n_tag(int tag, char *buf, size_t len)
         return p;
     }
 
-    snprintf(buf, len, "ERROR %d", tag);
+    snprintf(buf, len, "TAG %d", tag);
     return buf;
 }
 
@@ -729,24 +743,32 @@ readn(int fd, void *buf, size_t n)
 {
     size_t nleft;
     ssize_t nread;
+    bool is_eof = false;
 
     nleft = n;
     while (nleft > 0) {
         if ((nread = read(fd, buf, nleft)) < 0) {
             if (errno == EINTR) {
+                debug("read: %s (%d), will retry", strerror(errno), errno);
                 continue;
             } else {
                 debug("read: %s (%d)", strerror(errno), errno);
-                return -1;
+                break;
             }
         } else if (nread == 0) {
             /* EOF */
+            is_eof = true;
             break;
         }
         nleft -= nread;
         buf   += nread;
     }
-    return n - nleft;
+
+    if (nleft == n) {
+        return is_eof ? 0 : -1;
+    } else {
+        return n - nleft;
+    }
 }
 
 /* RETURN:
@@ -760,22 +782,43 @@ writen(int fd, const void *buf, size_t n)
     size_t nleft;
     ssize_t nwritten;
 
+    if (n == 0) {
+        return 0;
+    }
+
     nleft = n;
     while (nleft > 0) {
         if ((nwritten = write(fd, buf, nleft)) < 0) {
             if (errno == EINTR) {
+                debug("write: %s (%d), will retry", strerror(errno), errno);
                 continue;
             } else {
                 debug("write: %s (%d)", strerror(errno), errno);
-                return -1;
+                break;
             }
         } else if (nwritten == 0) {
             /* This may really happen? */
+            debug("write() returned 0");
         }
         nleft -= nwritten;
         buf += nwritten;
     }
-    return n - nleft;
+
+    if (nleft == n) {
+        return -1;
+    } else {
+        return n - nleft;
+    }
+}
+
+void
+sleep_ms(int ms)
+{
+    struct timeval timeout;
+
+    timeout.tv_sec = ms / 1000;
+    timeout.tv_usec = (ms % 1000) * 1000;
+    select(0, NULL, NULL, NULL, & timeout);
 }
 
 int

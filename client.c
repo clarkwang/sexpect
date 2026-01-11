@@ -68,10 +68,14 @@ cli_atexit(void)
 }
 
 static void
-cli_msg_send(ttlv_t *msg)
+cli_msg_send(ttlv_t ** msg, bool free_msg)
 {
-    if (msg_send(g.sock, msg) < 0) {
+    if (msg_send(g.sock, * msg) < 0) {
         fatal(ERROR_PROTO, "msg_send failed (server dead?)");
+    }
+
+    if (free_msg) {
+        msg_free(msg);
     }
 }
 
@@ -200,8 +204,7 @@ cli_send_winsize(void)
                       ttlv_new_int(TAG_WINSIZE_ROW, size.ws_row),
                       ttlv_new_int(TAG_WINSIZE_COL, size.ws_col),
                       NULL);
-    cli_msg_send(msg_out);
-    msg_free(&msg_out);
+    cli_msg_send( & msg_out, true);
 
     return 0;
 }
@@ -324,17 +327,39 @@ cli_subst_raw(char * raw, int size)
 }
 
 static void
-cli_loop(void)
+cli_loop(ttlv_t * first_msg)
 {
     char buf[1024];
     char errname[32];
     fd_set readfds;
     int r, nread;
     int fd_max;
+    int zero_writes_before_sleep = 10;
     ttlv_t * msg_out = NULL;
     ttlv_t * msg_in = NULL;
     struct st_cmdopts * cmdopts = g.cmdopts;
     struct timeval timeout;
+
+    /* raw mode for "interact" */
+    if (streq(cmdopts->cmd, CMD_INTERACT) ) {
+        /* user's tty to raw mode */
+        if (tty_raw(STDIN_FILENO, & g.saved_termios) < 0)
+            fatal_sys("tty_raw");
+
+        /* reset user's tty on exit */
+        g.reset_on_exit = true;
+        if (atexit(cli_atexit) < 0)
+            fatal_sys("atexit");
+
+        sig_handle(SIGWINCH, cli_sigWINCH);
+    }
+
+    /* send the initial command */
+    cli_msg_send( & first_msg, true);
+
+    if (streq(cmdopts->cmd, CMD_INTERACT) ) {
+        cli_send_winsize();
+    }
 
     while (true) {
         /* SIGWINCH */
@@ -361,7 +386,7 @@ cli_loop(void)
         }
 
         timeout.tv_sec = 0;
-        timeout.tv_usec = 100 * 1000;
+        timeout.tv_usec = 200 * 1000;
         r = select(fd_max + 1, &readfds, NULL, NULL, & timeout);
         if (r < 0) {
             if (errno == EINTR) {
@@ -393,10 +418,9 @@ cli_loop(void)
                 }
 
                 msg_out = ttlv_new_text(TAG_INPUT, nread, buf);
-                cli_msg_send(msg_out);
-                msg_free( & msg_out);
+                cli_msg_send( & msg_out, true);
             }
-        }
+        } // stdin --> server
 
         /* server --> client */
         if (FD_ISSET(g.sock, & readfds) ) {
@@ -406,8 +430,42 @@ cli_loop(void)
 
             msg_in = cli_msg_recv();
 
-            if (msg_in->tag == TAG_ACK) {
+            if (msg_in->tag == TAG_OK && ! streq(cmdopts->cmd, CMD_INTERACT) ) {
                 cli_disconn(0);
+
+                /* send response */
+            } else if (msg_in->tag == TAG_SEND_RESP) {
+                struct st_send * st = & cmdopts->send;
+                int size = 0;
+                ttlv_t * tag_written, * tag_left;
+
+                tag_written = ttlv_find_child(msg_in, TAG_SEND_RESP_COUNT_WRITTEN);
+                tag_left = ttlv_find_child(msg_in, TAG_SEND_RESP_COUNT_LEFT);
+                debug("send response: written=%d, left=%d",
+                      tag_written->v_int, tag_left->v_int);
+
+                st->len_sent += tag_written->v_int;
+                if (st->len_sent == st->len) {
+                    cli_disconn(0);
+                }
+
+                if (tag_written->v_int == 0) {
+                    st->zero_writes += 1;
+                } else {
+                    st->zero_writes = 0;
+                }
+                /* sleep a little while after consecutive zero writes */
+                if (st->zero_writes >= zero_writes_before_sleep) {
+                    debug("%d consecutive zero writes, sleep a while", zero_writes_before_sleep);
+                    sleep_ms(1000);
+
+                    st->zero_writes = 0;
+                }
+
+                size = MIN(PASS_SEND_CHUNK, st->len - st->len_sent);
+                msg_out = ttlv_new_raw(TAG_SEND, size, st->data + st->len_sent);
+
+                cli_msg_send( & msg_out, true);
             } else if (msg_in->tag == TAG_OUTPUT) {
                 if (g.nsubs > 0) {
                     cli_subst_raw( (void *) msg_in->v_raw, msg_in->length);
@@ -503,8 +561,8 @@ cli_loop(void)
                 bug("unexpected tag: %d", msg_in->tag);
                 fatal(ERROR_PROTO, NULL);
             }
-        }
-    }
+        } // server --> client
+    } // while(true)
 }
 
 static void
@@ -700,13 +758,20 @@ cli_main(struct st_cmdopts * cmdopts)
 
         /* send */
     } else if (streq(subcmd, CMD_SEND) ) {
-        if (cmdopts->send.enter) {
-            msg_out = ttlv_new_raw(TAG_SEND,
-                cmdopts->send.len + 1, cmdopts->send.data);
-            msg_out->v_raw[cmdopts->send.len] = '\r';
-        } else if (cmdopts->send.len > 0) {
-            msg_out = ttlv_new_raw(TAG_SEND,
-                cmdopts->send.len, cmdopts->send.data);
+        int size = MIN(cmdopts->send.len, PASS_SEND_CHUNK);
+
+        /* Here we use ttlv_new_raw() rather than ttlv_new_text() because we
+         * may send NULL chars like this:
+         *
+         *  $ sexpect send -cstring 'foo\000bar\000'
+         */
+        if (size > 0) {
+            msg_out = ttlv_new_raw(TAG_SEND, size, cmdopts->send.data);
+
+            /* Don't set `len_sent' here. The server may return some data later. */
+            if (0) {
+                cmdopts->send.len_sent = size;
+            }
         }
 
         /* set */
@@ -802,27 +867,5 @@ cli_main(struct st_cmdopts * cmdopts)
     /* HELLO */
     cli_hello();
 
-    /* raw mode for "interact" */
-    if (streq(cmdopts->cmd, CMD_INTERACT) ) {
-        /* user's tty to raw mode */
-        if (tty_raw(STDIN_FILENO, &g.saved_termios) < 0)
-            fatal_sys("tty_raw");
-
-        /* reset user's tty on exit */
-        g.reset_on_exit = true;
-        if (atexit(cli_atexit) < 0)
-            fatal_sys("atexit");
-
-        sig_handle(SIGWINCH, cli_sigWINCH);
-    }
-
-    /* send the initial command */
-    cli_msg_send(msg_out);
-    msg_free(&msg_out);
-
-    if (streq(cmdopts->cmd, CMD_INTERACT) ) {
-        cli_send_winsize();
-    }
-
-    cli_loop();
+    cli_loop(msg_out);
 }
