@@ -66,6 +66,18 @@ function negass_run()
     ! run "$@" || fatal "NEG_ASSERT: $*"
 }
 
+function str_repeat()
+{
+    local s=$1 count=$2
+    local res i
+
+    for ((i = 0; i < count; ++i)); do
+        res=$res$s
+    done
+
+    printf '%s' "$res"
+}
+
 {
     assert "[[ -d $BINDIR && -d $SRCDIR ]]"
     assert "[[ -x $BINDIR/sexpect ]]"

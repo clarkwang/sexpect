@@ -61,6 +61,7 @@ foreach(t
         get-expbuf
         interact-re-helper
         kill
+        send-128k
         spawn-nohup
         spawn-nonblock
         spawn-zombie-idle
