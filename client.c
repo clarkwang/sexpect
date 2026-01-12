@@ -420,7 +420,7 @@ cli_loop(ttlv_t * first_msg)
                 msg_out = ttlv_new_text(TAG_INPUT, nread, buf);
                 cli_msg_send( & msg_out, true);
             }
-        } // stdin --> server
+        }
 
         /* server --> client */
         if (FD_ISSET(g.sock, & readfds) ) {
@@ -561,8 +561,8 @@ cli_loop(ttlv_t * first_msg)
                 bug("unexpected tag: %d", msg_in->tag);
                 fatal(ERROR_PROTO, NULL);
             }
-        } // server --> client
-    } // while(true)
+        }
+    }
 }
 
 static void

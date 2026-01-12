@@ -62,7 +62,6 @@ enum {
     ERROR_EXITED,
     ERROR_INTERNAL,
     ERROR_DETACH,
-    ERROR_PARTIAL_WRITE,
 
     /* THE END */
     ERROR_END__,
