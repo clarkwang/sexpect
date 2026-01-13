@@ -62,6 +62,7 @@ foreach(t
         interact-re-helper
         kill
         send-128k
+        send-null
         spawn-nohup
         spawn-nonblock
         spawn-zombie-idle
