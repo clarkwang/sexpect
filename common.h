@@ -191,6 +191,9 @@ struct st_send {
     int    sources;
     int    zero_writes;
 
+    struct timespec startime;
+    int    timeout;   // negative value means infinite
+
     /* server */
     char * data;
     int    len;

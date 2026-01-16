@@ -438,6 +438,7 @@ cli_loop(ttlv_t * first_msg)
                 struct st_send * st = & cmdopts->send;
                 int size = 0;
                 ttlv_t * tag_written, * tag_left;
+                struct timespec now;
 
                 tag_written = ttlv_find_child(msg_in, TAG_SEND_RESP_COUNT_WRITTEN);
                 tag_left = ttlv_find_child(msg_in, TAG_SEND_RESP_COUNT_LEFT);
@@ -447,6 +448,13 @@ cli_loop(ttlv_t * first_msg)
                 st->len_sent += tag_written->v_int;
                 if (st->len_sent == st->len) {
                     cli_disconn(0);
+                }
+
+                /* -timeout */
+                Clock_gettime( & now);
+                if (st->timeout >= 0 && Clock_diff( & st->startime, & now) >= st->timeout) {
+                    debug("send timed out, giving up");
+                    cli_disconn(ERROR_TIMEOUT);
                 }
 
                 if (tag_written->v_int == 0) {

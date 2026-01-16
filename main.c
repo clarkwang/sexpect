@@ -384,6 +384,8 @@ getargs(int argc, char **argv)
                     /* send */
                 } else if (str1of(arg, "send", "s", NULL) ) {
                     g.cmdopts.cmd = CMD_SEND;
+                    Clock_gettime( & g.cmdopts.send.startime);
+                    g.cmdopts.send.timeout = -1;
 
                     /* set */
                 } else if (str1of(arg, "set", NULL) ) {
@@ -595,6 +597,11 @@ getargs(int argc, char **argv)
                 st->has_fd = true;
                 next = nextarg(argv, arg, & i);
                 st->fd = arg2uint(next);
+            } else if (str1of(arg, "-timeout", "-t", NULL) ) {
+                st->timeout = arg2int(nextarg(argv, arg, & i) );
+                if (st->timeout < 0) {
+                    st->timeout = -1;
+                }
             } else if (str1of(arg, "-limit", NULL) ) {
                 next = nextarg(argv, arg, & i);
                 st->limit = arg2uint(next);
