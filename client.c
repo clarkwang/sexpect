@@ -453,7 +453,7 @@ cli_loop(ttlv_t * first_msg)
                 /* -timeout */
                 Clock_gettime( & now);
                 if (st->timeout >= 0 && Clock_diff( & st->startime, & now) >= st->timeout) {
-                    debug("send timed out, giving up");
+                    fprintf(stderr, "send timed out (%d/%d bytes sent)\n", st->len_sent, st->len);
                     cli_disconn(ERROR_TIMEOUT);
                 }
 
