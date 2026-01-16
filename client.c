@@ -465,7 +465,7 @@ cli_loop(ttlv_t * first_msg)
                 /* sleep a little while after consecutive zero writes */
                 if (st->zero_writes >= zero_writes_before_sleep) {
                     debug("%d consecutive zero writes, sleep a while", zero_writes_before_sleep);
-                    sleep_ms(1000);
+                    sleep_ms(200);
 
                     st->zero_writes = 0;
                 }
