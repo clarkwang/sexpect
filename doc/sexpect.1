@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: sexpect
 .\"    Author: [see the "AUTHOR(S)" section]
-.\" Generator: Asciidoctor 2.0.17
-.\"      Date: 2022-09-16
+.\" Generator: Asciidoctor 2.0.18
+.\"      Date: 2026-01-16
 .\"    Manual: sexpect manual
-.\"    Source: sexpect 2.3.14
+.\"    Source: sexpect 2.4.0
 .\"  Language: English
 .\"
-.TH "SEXPECT" "1" "2022-09-16" "sexpect 2.3.14" "sexpect manual"
+.TH "SEXPECT" "1" "2026-01-16" "sexpect 2.4.0" "sexpect manual"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -290,7 +290,7 @@ fi
 .RS 4
 The \*(Aq\fBsend\fP\*(Aq sub\-command sends data to the spawned process.
 .sp
-Note that the data to be sent must be less than \fB1024\fP bytes.
+Note that the data to be sent must be less than \fB1024K\fP bytes.
 To send more data, use multiple \*(Aq\fBsexpect send\fP\*(Aq commands.
 .RE
 .sp
@@ -354,12 +354,20 @@ Send the value of environment variable \fINAME\fP to the spawned process.
 \-limit LIMIT
 .RS 4
 Used with \*(Aq\fB\-file\fP\*(Aq or \*(Aq\fB\-fd\fP\*(Aq. Read at most \fILIMIT\fP chars from the file.
-\fILIMIT\fP should be in range \fB[1, 1024]\fP.
+\fILIMIT\fP should be in range \fB[1, 1024K]\fP.
 .RE
 .sp
 \-strip
 .RS 4
 See option \*(Aq\fB\-file\fP\*(Aq.
+.RE
+.sp
+\-timeout N | \-t N
+.RS 4
+By default, \*(Aq\fBsend\fP\*(Aq is in blocking mode and it\(cqll keep sending until all
+data are sent.
+A negative value means no timeout.
+The default value is \fB\-1\fP.
 .RE
 .SS "interact (i)"
 .sp

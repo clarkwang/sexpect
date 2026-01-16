@@ -90,6 +90,7 @@ send (s)\n\
         -env NAME | -var NAME\n\
         -limit LIMIT\n\
         -strip\n\
+        -timeout N | -t N\n\
 \n\
 interact (i)\n\
 ------------\n\

@@ -1,6 +1,6 @@
 = sexpect(1)
 :doctype: manpage
-:sexpect-version: 2.3.14
+:sexpect-version: 2.4.0
 :man manual: sexpect manual
 :man source: sexpect {sexpect-version}
 :page-layout: base
@@ -202,7 +202,7 @@ For example (in *Bash*):
 *sexpect send* [_OPTION_] [ [--] _STRING_ | *-file* _FILE_ | *-env* _NAME_] ::
     The '*send*' sub-command sends data to the spawned process.
 +
-Note that the data to be sent must be less than *1024* bytes.
+Note that the data to be sent must be less than *1024K* bytes.
 To send more data, use multiple '*sexpect send*' commands.
 
 The '*send*' sub-command supports the following options:
@@ -248,10 +248,16 @@ Other supported escapes:
 
 -limit LIMIT ::
     Used with '*-file*' or '*-fd*'. Read at most _LIMIT_ chars from the file.
-    _LIMIT_ should be in range *[1, 1024]*.
+    _LIMIT_ should be in range *[1, 1024K]*.
 
 -strip ::
     See option '*-file*'.
+
+-timeout N | -t N::
+    By default, '*send*' is in blocking mode and it'll keep sending until all
+    data are sent.
+    A negative value means no timeout.
+    The default value is *-1*.
 
 === interact (i)
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.17">
+<meta name="generator" content="Asciidoctor 2.0.18">
 <title>sexpect(1)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -84,10 +84,10 @@ code{font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;font-weight:400;
 ul,ol,dl{line-height:1.6;margin-bottom:1.25em;list-style-position:outside;font-family:inherit}
 ul,ol{margin-left:1.5em}
 ul li ul,ul li ol{margin-left:1.25em;margin-bottom:0}
-ul.square li ul,ul.circle li ul,ul.disc li ul{list-style:inherit}
-ul.square{list-style-type:square}
 ul.circle{list-style-type:circle}
 ul.disc{list-style-type:disc}
+ul.square{list-style-type:square}
+ul.circle ul:not([class]),ul.disc ul:not([class]),ul.square ul:not([class]){list-style:inherit}
 ol li ul,ol li ol{margin-left:1.25em;margin-bottom:0}
 dl dt{margin-bottom:.3125em;font-weight:bold}
 dl dd{margin-bottom:1.25em}
@@ -720,7 +720,7 @@ fi</pre>
 <dd>
 <p>The '<strong>send</strong>' sub-command sends data to the spawned process.</p>
 <div class="paragraph">
-<p>Note that the data to be sent must be less than <strong>1024</strong> bytes.
+<p>Note that the data to be sent must be less than <strong>1024K</strong> bytes.
 To send more data, use multiple '<strong>sexpect send</strong>' commands.</p>
 </div>
 </dd>
@@ -780,11 +780,18 @@ Use '<strong>-strip</strong>' to remove trailing white space chars.</p>
 <dt class="hdlist1">-limit LIMIT </dt>
 <dd>
 <p>Used with '<strong>-file</strong>' or '<strong>-fd</strong>'. Read at most <em>LIMIT</em> chars from the file.
-<em>LIMIT</em> should be in range <strong>[1, 1024]</strong>.</p>
+<em>LIMIT</em> should be in range <strong>[1, 1024K]</strong>.</p>
 </dd>
 <dt class="hdlist1">-strip </dt>
 <dd>
 <p>See option '<strong>-file</strong>'.</p>
+</dd>
+<dt class="hdlist1">-timeout N | -t N</dt>
+<dd>
+<p>By default, '<strong>send</strong>' is in blocking mode and it&#8217;ll keep sending until all
+data are sent.
+A negative value means no timeout.
+The default value is <strong>-1</strong>.</p>
 </dd>
 </dl>
 </div>
@@ -1171,7 +1178,7 @@ open an issue at <a href="https://github.com/clarkwang/sexpect/issues/" class="b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-09-16 22:26:18 +0800
+Last updated 2026-01-16 23:02:14 +0800
 </div>
 </div>
 </body>
