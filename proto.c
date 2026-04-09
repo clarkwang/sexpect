@@ -1,6 +1,7 @@
 
 #include <ctype.h>
 #include <inttypes.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -95,9 +96,9 @@ ttlv_new(uint32_t tag, ttlv_type_t type, uint32_t length)
     ttlv_t * p;
 
     if (type == TTYPE_TEXT || type == TTYPE_RAW) {
-        p = calloc(1, sizeof(ttlv_t) - 8 /* == sizeof(the union) */ + length + 1);
+        p = calloc(1, offsetof(ttlv_t, v_int) + length + 1);
     } else {
-        p = calloc(1, sizeof(ttlv_t) - 8 /* == sizeof(the union) */ + length);
+        p = calloc(1, offsetof(ttlv_t, v_int) + length);
     }
     p->tag = tag;
     p->type = type;
